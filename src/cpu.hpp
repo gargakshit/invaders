@@ -44,14 +44,18 @@ class CPU {
   // Utility functions for register pairs. Inline'd for the best performance
   inline uint16_t GetHL();
 
+  // Check the parity of an input
+  inline int Parity(int x, int size);
+  // Calculate the flags for arithmetic operation on acc
+  void ArithFlagsA(uint16_t res);
+
   ReadFunction ReadBus;
   WriteFunction WriteBus;
 
   inline void UnimplementedOpcode();
 
-  // MOV gets the value from the registers / memory as defined by the opcode and
-  // then returns it. It is upto the callee to assign it
-  inline uint8_t MOV(uint8_t op);
+  // GetOperand8 returns the operand by decoding the opcode
+  inline uint8_t GetOperand8(uint8_t opcode);
 
   void ExecuteOpcode();
 
