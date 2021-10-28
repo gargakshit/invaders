@@ -187,6 +187,23 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a + (uint16_t)GetOperand8(opcode);
     ArithFlagsA(res);
     a = res & 0xff;
+    break;
+  }
+
+  // ADC operand
+  case 0x88:
+  case 0x89:
+  case 0x8a:
+  case 0x8b:
+  case 0x8c:
+  case 0x8d:
+  case 0x8e:
+  case 0x8f: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a + (uint16_t)GetOperand8(opcode) + flags.cy;
+    ArithFlagsA(res);
+    a = res & 0xff;
+    break;
   }
 
   default: {
