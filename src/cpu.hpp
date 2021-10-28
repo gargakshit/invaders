@@ -41,10 +41,19 @@ class CPU {
   // Are interrupts enabled
   bool interrupts;
 
+  // Utility functions for register pairs. Inline'd for the best performance
+  inline uint16_t GetHL();
+
   ReadFunction ReadBus;
   WriteFunction WriteBus;
 
   inline void UnimplementedOpcode();
+
+  // MOV gets the value from the registers / memory as defined by the opcode and
+  // then returns it. It is upto the callee to assign it
+  inline uint8_t MOV(uint8_t op);
+
+  void ExecuteOpcode();
 
 public:
   CPU(ReadFunction, WriteFunction);
