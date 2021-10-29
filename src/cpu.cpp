@@ -206,6 +206,38 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
+  // SUB operand
+  case 0x90:
+  case 0x91:
+  case 0x92:
+  case 0x93:
+  case 0x94:
+  case 0x95:
+  case 0x96:
+  case 0x97: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8(opcode);
+    ArithFlagsA(res);
+    a = res & 0xff;
+    break;
+  }
+
+  // SBB operand
+  case 0x98:
+  case 0x99:
+  case 0x9a:
+  case 0x9b:
+  case 0x9c:
+  case 0x9d:
+  case 0x9e:
+  case 0x9f: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8(opcode) - flags.cy;
+    ArithFlagsA(res);
+    a = res & 0xff;
+    break;
+  }
+
   default: {
     UnimplementedOpcode();
     break;
