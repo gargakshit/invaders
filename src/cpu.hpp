@@ -48,6 +48,8 @@ class CPU {
   inline int Parity(int x, int size);
   // Calculate the flags for arithmetic operation on acc
   void ArithFlagsA(uint16_t res);
+  // Calculate the flags for logic operation on acc
+  void LogicFlagsA();
 
   ReadFunction ReadBus;
   WriteFunction WriteBus;

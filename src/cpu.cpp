@@ -40,6 +40,14 @@ void CPU::ArithFlagsA(uint16_t res) {
   flags.p = Parity(res & 0xff, 8);
 }
 
+void CPU::LogicFlagsA() {
+  flags.cy = 0;
+  flags.ac = 0;
+  flags.z = a == 0;
+  flags.s = (0x80 == (a & 0x80));
+  flags.p = Parity(a, 8);
+}
+
 inline uint16_t CPU::GetHL() { return ((uint16_t)h) << 8 | (uint16_t)l; }
 
 inline void CPU::UnimplementedOpcode() { TODO("Unimplemented Opcode"); }
@@ -235,6 +243,34 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a - (uint16_t)GetOperand8(opcode) - flags.cy;
     ArithFlagsA(res);
     a = res & 0xff;
+    break;
+  }
+
+  // ANA operand
+  case 0xa0:
+  case 0xa1:
+  case 0xa2:
+  case 0xa3:
+  case 0xa4:
+  case 0xa5:
+  case 0xa6:
+  case 0xa7: {
+    a &= GetOperand8(opcode);
+    LogicFlagsA();
+    break;
+  }
+
+  // XRA operand
+  case 0xa8:
+  case 0xa9:
+  case 0xaa:
+  case 0xab:
+  case 0xac:
+  case 0xad:
+  case 0xae:
+  case 0xaf: {
+    a ^= GetOperand8(opcode);
+    LogicFlagsA();
     break;
   }
 
