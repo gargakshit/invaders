@@ -274,6 +274,35 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
+  // ORA operand
+  case 0xb0:
+  case 0xb1:
+  case 0xb2:
+  case 0xb3:
+  case 0xb4:
+  case 0xb5:
+  case 0xb6:
+  case 0xb7: {
+    a |= GetOperand8(opcode);
+    LogicFlagsA();
+    break;
+  }
+
+  // CMP operand
+  case 0xb8:
+  case 0xb9:
+  case 0xba:
+  case 0xbb:
+  case 0xbc:
+  case 0xbd:
+  case 0xbe:
+  case 0xbf: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8(opcode);
+    ArithFlagsA(res);
+    break;
+  }
+
   default: {
     UnimplementedOpcode();
     break;
