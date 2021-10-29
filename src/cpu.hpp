@@ -51,6 +51,9 @@ class CPU {
   // Calculate the flags for logic operation on acc
   void LogicFlagsA();
 
+  // Decode the operands and perform the `MOV` operation
+  inline void MOV(uint8_t opcode);
+
   ReadFunction ReadBus;
   WriteFunction WriteBus;
 
