@@ -70,7 +70,7 @@ inline uint8_t CPU::GetOperand8(uint8_t opcode) {
 inline void CPU::MOV(uint8_t opcode) {
   auto from = GetOperand8(opcode);
 
-  switch (opcode & 0x07) {
+  switch ((opcode >> 3) & 0x7) {
   case 0: b = from; break;
   case 1: c = from; break;
   case 2: d = from; break;
