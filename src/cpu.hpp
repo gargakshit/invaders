@@ -53,6 +53,7 @@ class CPU {
 
   // Decode the operands and perform the `MOV` operation
   inline void MOV(uint8_t opcode);
+  // inline void MVI(uint8_t opcode);
 
   ReadFunction ReadBus;
   WriteFunction WriteBus;
