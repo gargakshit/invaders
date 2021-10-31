@@ -107,10 +107,6 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
-  case 0x01 ... 0x3f: {
-    break;
-  }
-
   // MOV
   // clang-format off
   case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46:
@@ -213,6 +209,16 @@ void CPU::ExecuteOpcode() {
     // Use higher precision for easier flag calculation
     uint16_t res = (uint16_t)a - (uint16_t)GetOperand8_1(opcode);
     ArithFlagsA(res);
+    break;
+  }
+
+  // MVI operand,u8
+  // clang-format off
+  case 0x06: case 0x0E: case 0x16: case 0x1E: case 0x26: case 0x2E: case 0x36:
+  case 0x3E: {
+    // clang-format on
+    SetOperand8_0(opcode, ReadBus(pc + 1));
+    ++pc;
     break;
   }
 
