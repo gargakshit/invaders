@@ -52,8 +52,23 @@ inline uint16_t CPU::GetHL() { return ((uint16_t)h) << 8 | (uint16_t)l; }
 
 inline void CPU::UnimplementedOpcode() { TODO("Unimplemented Opcode"); }
 
-inline uint8_t CPU::GetOperand8(uint8_t opcode) {
-  // Match with the last nibble
+inline uint8_t CPU::GetOperand8_0(uint8_t opcode) {
+  // Match with the second nibble
+  switch ((opcode >> 3) & 0x7) {
+  case 0: return b;
+  case 1: return c;
+  case 2: return d;
+  case 3: return e;
+  case 4: return h;
+  case 5: return l;
+  case 6: return ReadBus(GetHL());
+  case 7: return a;
+  default: PANIC("Impossible state");
+  }
+}
+
+inline uint8_t CPU::GetOperand8_1(uint8_t opcode) {
+  // Match with the first nibble
   switch (opcode & 0x07) {
   case 0: return b;
   case 1: return c;
@@ -67,19 +82,18 @@ inline uint8_t CPU::GetOperand8(uint8_t opcode) {
   }
 }
 
-inline void CPU::MOV(uint8_t opcode) {
-  auto from = GetOperand8(opcode);
-
+inline void CPU::SetOperand8_0(uint8_t opcode, uint8_t value) {
+  // Match with the first nibble
   switch ((opcode >> 3) & 0x7) {
-  case 0: b = from; break;
-  case 1: c = from; break;
-  case 2: d = from; break;
-  case 3: e = from; break;
-  case 4: h = from; break;
-  case 5: l = from; break;
-  case 6: WriteBus(GetHL(), from); break;
-  case 7: a = from; break;
-  default: PANIC("Invalid operands for MOV");
+  case 0: b = value; break;
+  case 1: c = value; break;
+  case 2: d = value; break;
+  case 3: e = value; break;
+  case 4: h = value; break;
+  case 5: l = value; break;
+  case 6: WriteBus(GetHL(), value); break;
+  case 7: a = value; break;
+  default: PANIC("Impossible state");
   }
 }
 
@@ -109,7 +123,7 @@ void CPU::ExecuteOpcode() {
   case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x77: case 0x78:
   case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F: {
     // clang-format on
-    MOV(opcode);
+    SetOperand8_0(opcode, GetOperand8_1(opcode));
     break;
   }
 
@@ -119,7 +133,7 @@ void CPU::ExecuteOpcode() {
   case 0x87: {
     // clang-format on
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a + (uint16_t)GetOperand8(opcode);
+    uint16_t res = (uint16_t)a + (uint16_t)GetOperand8_1(opcode);
     ArithFlagsA(res);
     a = res & 0xff;
     break;
@@ -131,7 +145,7 @@ void CPU::ExecuteOpcode() {
   case 0x8f: {
     // clang-format on
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a + (uint16_t)GetOperand8(opcode) + flags.cy;
+    uint16_t res = (uint16_t)a + (uint16_t)GetOperand8_1(opcode) + flags.cy;
     ArithFlagsA(res);
     a = res & 0xff;
     break;
@@ -143,7 +157,7 @@ void CPU::ExecuteOpcode() {
   case 0x97: {
     // clang-format on
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8(opcode);
+    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8_1(opcode);
     ArithFlagsA(res);
     a = res & 0xff;
     break;
@@ -155,7 +169,7 @@ void CPU::ExecuteOpcode() {
   case 0x9f: {
     // clang-format on
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8(opcode) - flags.cy;
+    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8_1(opcode) - flags.cy;
     ArithFlagsA(res);
     a = res & 0xff;
     break;
@@ -166,7 +180,7 @@ void CPU::ExecuteOpcode() {
   case 0xa0: case 0xa1: case 0xa2: case 0xa3: case 0xa4: case 0xa5: case 0xa6:
   case 0xa7: {
     // clang-format on
-    a &= GetOperand8(opcode);
+    a &= GetOperand8_1(opcode);
     LogicFlagsA();
     break;
   }
@@ -176,7 +190,7 @@ void CPU::ExecuteOpcode() {
   case 0xa8: case 0xa9: case 0xaa: case 0xab: case 0xac: case 0xad: case 0xae:
   case 0xaf: {
     // clang-format on
-    a ^= GetOperand8(opcode);
+    a ^= GetOperand8_1(opcode);
     LogicFlagsA();
     break;
   }
@@ -186,7 +200,7 @@ void CPU::ExecuteOpcode() {
   case 0xb0: case 0xb1: case 0xb2: case 0xb3: case 0xb4: case 0xb5: case 0xb6:
   case 0xb7: {
     // clang-format on
-    a |= GetOperand8(opcode);
+    a |= GetOperand8_1(opcode);
     LogicFlagsA();
     break;
   }
@@ -197,7 +211,7 @@ void CPU::ExecuteOpcode() {
   case 0xbf: {
     // clang-format on
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8(opcode);
+    uint16_t res = (uint16_t)a - (uint16_t)GetOperand8_1(opcode);
     ArithFlagsA(res);
     break;
   }

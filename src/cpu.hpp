@@ -51,17 +51,18 @@ class CPU {
   // Calculate the flags for logic operation on acc
   void LogicFlagsA();
 
-  // Decode the operands and perform the `MOV` operation
-  inline void MOV(uint8_t opcode);
-  // inline void MVI(uint8_t opcode);
-
+  // Bus operations
   ReadFunction ReadBus;
   WriteFunction WriteBus;
 
   inline void UnimplementedOpcode();
 
-  // GetOperand8 returns the operand by decoding the opcode
-  inline uint8_t GetOperand8(uint8_t opcode);
+  // It returns the first operand by decoding the opcode (opcode >> 3) & 0x7)
+  inline uint8_t GetOperand8_0(uint8_t opcode);
+  // It returns the second operand by decoding the opcode (opcode & 0x07)
+  inline uint8_t GetOperand8_1(uint8_t opcode);
+  // It sets the first operand by decoding the opcode (opcode >> 3) & 0x7)
+  inline void SetOperand8_0(uint8_t opcode, uint8_t value);
 
   void ExecuteOpcode();
 
