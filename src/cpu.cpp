@@ -33,8 +33,10 @@ inline int CPU::Parity(int x, int size) {
   return (0 == (p & 0x1));
 }
 
-void CPU::ArithFlagsA(uint16_t res) {
-  flags.cy = (res > 0xff);
+void CPU::ArithFlagsA(uint16_t res, bool carry) {
+  if (carry) {
+    flags.cy = (res > 0xff);
+  }
   flags.z = ((res & 0xff) == 0);
   flags.s = (0x80 == (res & 0x80));
   flags.p = Parity(res & 0xff, 8);
@@ -219,6 +221,28 @@ void CPU::ExecuteOpcode() {
     // clang-format on
     SetOperand8_0(opcode, ReadBus(pc + 1));
     ++pc;
+    break;
+  }
+
+  // INR operand
+  // clang-format off
+  case 0x04: case 0x0c: case 0x14: case 0x1c: case 0x24: case 0x2c: case 0x34:
+  case 0x3c: {
+    // clang-format on
+    uint8_t result = GetOperand8_0(opcode) + 1;
+    SetOperand8_0(opcode, result);
+    ArithFlagsA(result, false);
+    break;
+  }
+
+  // DCR operand
+  // clang-format off
+  case 0x05: case 0x0d: case 0x15: case 0x1d: case 0x25: case 0x2d: case 0x35:
+  case 0x3d: {
+    // clang-format on
+    uint8_t result = GetOperand8_0(opcode) - 1;
+    SetOperand8_0(opcode, result);
+    ArithFlagsA(result, false);
     break;
   }
 

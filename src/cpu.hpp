@@ -46,8 +46,9 @@ class CPU {
 
   // Check the parity of an input
   inline int Parity(int x, int size);
-  // Calculate the flags for arithmetic operation on acc
-  void ArithFlagsA(uint16_t res);
+  // Calculate the flags for arithmetic operation on acc. Pass the 2nd argument
+  // as false to not change the carry flag
+  void ArithFlagsA(uint16_t res, bool carry = true);
   // Calculate the flags for logic operation on acc
   void LogicFlagsA();
 
