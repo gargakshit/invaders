@@ -99,6 +99,28 @@ inline void CPU::SetOperand8_0(uint8_t opcode, uint8_t value) {
   }
 }
 
+inline uint16_t CPU::GetRP(uint8_t opcode) {
+  // Match with the first byte
+  switch ((opcode >> 4) & 0x3) {
+  case 0: return GET_RP(b, c);
+  case 1: return GET_RP(d, e);
+  case 2: return GET_RP(h, l);
+  case 3: return sp;
+  default: PANIC("Impossible state");
+  }
+}
+
+inline void CPU::SetRP(uint8_t opcode, uint16_t value) {
+  // Match with the first byte
+  switch ((opcode >> 4) & 0x3) {
+  case 0: SET_RP(b, c, value); break;
+  case 1: SET_RP(d, e, value); break;
+  case 2: SET_RP(h, l, value); break;
+  case 3: sp = value; break;
+  default: PANIC("Impossible state");
+  }
+}
+
 void CPU::ExecuteOpcode() {
   uint8_t opcode = ReadBus(pc);
   pc += 1;
@@ -243,6 +265,35 @@ void CPU::ExecuteOpcode() {
     uint8_t result = GetOperand8_0(opcode) - 1;
     SetOperand8_0(opcode, result);
     ArithFlagsA(result, false);
+    break;
+  }
+
+  // INX operand
+  // clang-format off
+  case 0x03: case 0x13: case 0x23: case 0x33: {
+    // clang-format on
+    SetRP(opcode, GetRP(opcode) + 1);
+    break;
+  }
+
+  // DCX operand
+  // clang-format off
+  case 0x0b: case 0x1b: case 0x2b: case 0x3b: {
+    // clang-format on
+    SetRP(opcode, GetRP(opcode) - 1);
+    break;
+  }
+
+  // DAD operand
+  // clang-format off
+  case 0x09: case 0x19: case 0x29: case 0x39: {
+    // clang-format on
+    uint16_t val = GetRP(opcode);
+    // Use higher precision for easier flag calculation
+    uint32_t res = (uint32_t)GetHL() + (uint32_t)val;
+    SET_RP(h, l, (uint16_t)res);
+    // Set the carry flag
+    flags.cy = (res & 0xffff0000) != 0;
     break;
   }
 

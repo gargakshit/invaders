@@ -1,6 +1,13 @@
 #include <functional>
 #include <stdint.h>
 
+#define GET_RP(a, b) (((uint16_t)a << 8) | (uint16_t)b)
+#define SET_RP(a, b, val)                                                      \
+  do {                                                                         \
+    a = val >> 8;                                                              \
+    b = val & 0xFF;                                                            \
+  } while (0)
+
 namespace invaders {
 typedef std::function<uint8_t(uint16_t)> ReadFunction;
 typedef std::function<void(uint16_t, uint8_t)> WriteFunction;
@@ -64,6 +71,12 @@ class CPU {
   inline uint8_t GetOperand8_1(uint8_t opcode);
   // It sets the first operand by decoding the opcode (opcode >> 3) & 0x7)
   inline void SetOperand8_0(uint8_t opcode, uint8_t value);
+  // It returns the 16-bit operand (register pair) from the opcode
+  // `((opcode >> 4) & 0x3)`
+  inline uint16_t GetRP(uint8_t opcode);
+  // It sets the 16-bit operand (register pair) from the opcode
+  // `((opcode >> 4) & 0x3)`
+  inline void SetRP(uint8_t opcode, uint16_t value);
 
   void ExecuteOpcode();
 
