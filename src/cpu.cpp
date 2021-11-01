@@ -319,7 +319,7 @@ void CPU::ExecuteOpcode() {
 
   // STAX operand
   // clang-format off
-  case 0x02: case 0x12: case 0x32: {
+  case 0x02: case 0x12: {
     // clang-format on
     WriteBus(GetRP(opcode), a);
     break;
@@ -330,6 +330,39 @@ void CPU::ExecuteOpcode() {
     uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
     WriteBus(offset, l);
     WriteBus(offset + 1, h);
+    pc += 2;
+    break;
+  }
+
+  // STA u16
+  case 0x32: {
+    uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
+    WriteBus(offset, a);
+    pc += 2;
+    break;
+  }
+
+  // LDAX operand
+  // clang-format off
+  case 0x0a: case 0x1a: {
+    // clang-format on
+    a = ReadBus(GetRP(opcode));
+    break;
+  }
+
+  // LDHL u16
+  case 0x2a: {
+    uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
+    l = ReadBus(offset);
+    h = ReadBus(offset + 1);
+    pc += 2;
+    break;
+  }
+
+  // LDA u16
+  case 0x3a: {
+    uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
+    a = ReadBus(offset);
     pc += 2;
     break;
   }
