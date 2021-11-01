@@ -403,6 +403,34 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
+  // RRC
+  case 0x0f: {
+    uint8_t oldA = a;
+    a = ((oldA & 0x1) << 7) | (oldA >> 1);
+    flags.cy = (oldA & 0x1) == 0x1;
+    break;
+  }
+
+  // RAR
+  case 0x1f: {
+    uint8_t oldA = a;
+    a = (flags.cy << 7) | (oldA >> 1);
+    flags.cy = (oldA & 0x1) == 0x1;
+    break;
+  }
+
+  // CMA
+  case 0x2f: {
+    a = ~a;
+    break;
+  }
+
+  // CMC
+  case 0x3f: {
+    flags.cy = ~flags.cy;
+    break;
+  }
+
   default: {
     UnimplementedOpcode();
     break;
