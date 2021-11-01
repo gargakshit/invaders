@@ -121,13 +121,13 @@ inline void CPU::SetRP(uint8_t opcode, uint16_t value) {
   }
 }
 
-inline void CPU::SetRP(uint8_t opcode, uint8_t value1, uint8_t value2) {
+inline void CPU::SetRP(uint8_t opcode, uint8_t lowByte, uint8_t highByte) {
   // Match with the first byte
   switch ((opcode >> 4) & 0x3) {
-  case 0: SET_RP8(b, c, value1, value2); break;
-  case 1: SET_RP8(d, e, value1, value2); break;
-  case 2: SET_RP8(h, l, value1, value2); break;
-  case 3: sp = (uint16_t)value1 | ((uint16_t)value2 << 8); break;
+  case 0: SET_RP8(b, c, lowByte, highByte); break;
+  case 1: SET_RP8(d, e, lowByte, highByte); break;
+  case 2: SET_RP8(h, l, lowByte, highByte); break;
+  case 3: sp = (uint16_t)lowByte | ((uint16_t)highByte << 8); break;
   default: PANIC("Impossible state");
   }
 }
@@ -313,6 +313,23 @@ void CPU::ExecuteOpcode() {
   case 0x01: case 0x11: case 0x21: case 0x31: {
     // clang-format on
     SetRP(opcode, ReadBus(pc), ReadBus(pc + 1));
+    pc += 2;
+    break;
+  }
+
+  // STAX operand
+  // clang-format off
+  case 0x02: case 0x12: case 0x32: {
+    // clang-format on
+    WriteBus(GetRP(opcode), a);
+    break;
+  }
+
+  // SHLD u16
+  case 0x22: {
+    uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
+    WriteBus(offset, l);
+    WriteBus(offset + 1, h);
     pc += 2;
     break;
   }

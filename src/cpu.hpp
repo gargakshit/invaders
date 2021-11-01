@@ -12,10 +12,10 @@
   } while (0)
 
 // Set the register pair (a, b) with (val1, val2) in little-endian
-#define SET_RP8(a, b, val1, val2)                                              \
+#define SET_RP8(a, b, lowByte, highByte)                                       \
   do {                                                                         \
-    a = val2;                                                                  \
-    b = val1;                                                                  \
+    a = highByte;                                                              \
+    b = lowByte;                                                               \
   } while (0)
 
 namespace invaders {
