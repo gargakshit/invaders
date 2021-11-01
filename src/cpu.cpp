@@ -497,6 +497,29 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
+  // RET condition,u16 (RZ u16, RPE u16, etc)
+  // clang-format off
+  case 0xc0: case 0xc8: case 0xd0: case 0xd8: case 0xe0: case 0xe8: case 0xf0:
+  case 0xf8: {
+    // clang-format on
+    if (BranchCondition(opcode)) {
+      // TODO: confirm
+      pc = (uint16_t)ReadBus(sp) | ((uint16_t)ReadBus(sp + 1) << 8);
+      sp += 2;
+    } else {
+      pc += 2;
+    }
+    break;
+  }
+
+  // RET u16
+  case 0xc9: {
+    // TODO: confirm
+    pc = (uint16_t)ReadBus(sp) | ((uint16_t)ReadBus(sp + 1) << 8);
+    sp += 2;
+    break;
+  }
+
   default: {
     UnimplementedOpcode();
     break;
