@@ -462,8 +462,37 @@ void CPU::ExecuteOpcode() {
   }
 
   // JMP u16
-  case 0xc4: {
+  case 0xc3: {
     // TODO: confirm
+    pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
+    break;
+  }
+
+  // CALL condition,u16 (CZ u16, CPE u16, etc)
+  // clang-format off
+  case 0xc4: case 0xcc: case 0xd4: case 0xdc: case 0xe4: case 0xec: case 0xf4:
+  case 0xfc: {
+    // clang-format on
+    if (BranchCondition(opcode)) {
+      // TODO: confirm
+      uint16_t ret = pc + 2;
+      WriteBus(sp - 1, (ret >> 8) & 0xff);
+      WriteBus(sp - 2, ret & 0xff);
+      sp -= 2;
+      pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
+    } else {
+      pc += 2;
+    }
+    break;
+  }
+
+  // CALL u16
+  case 0xcd: {
+    // TODO: confirm
+    uint16_t ret = pc + 2;
+    WriteBus(sp - 1, (ret >> 8) & 0xff);
+    WriteBus(sp - 2, ret & 0xff);
+    sp -= 2;
     pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
     break;
   }
