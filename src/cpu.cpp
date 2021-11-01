@@ -132,6 +132,21 @@ inline void CPU::SetRP(uint8_t opcode, uint8_t lowByte, uint8_t highByte) {
   }
 }
 
+inline bool CPU::BranchCondition(uint8_t opcode) {
+  // Match with the first byte
+  switch ((opcode >> 3) & 0x7) {
+  case 0: return flags.z == 0;
+  case 1: return flags.z != 0;
+  case 2: return flags.cy == 0;
+  case 3: return flags.cy != 0;
+  case 4: return flags.p == 0;
+  case 5: return flags.p != 0;
+  case 6: return flags.s == 0;
+  case 7: return flags.s != 0;
+  default: PANIC("Impossible state");
+  }
+}
+
 void CPU::ExecuteOpcode() {
   uint8_t opcode = ReadBus(pc);
   pc += 1;
@@ -427,7 +442,29 @@ void CPU::ExecuteOpcode() {
 
   // CMC
   case 0x3f: {
+    // TODO: confirm
     flags.cy = ~flags.cy;
+    break;
+  }
+
+  // JUMP condition,u16 (JZ u16, JPE u16, etc)
+  // clang-format off
+  case 0xc2: case 0xca: case 0xd2: case 0xda: case 0xe2: case 0xea: case 0xf2:
+  case 0xfa: {
+    // clang-format on
+    if (BranchCondition(opcode)) {
+      // TODO: confirm
+      pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
+    } else {
+      pc += 2;
+    }
+    break;
+  }
+
+  // JMP u16
+  case 0xc4: {
+    // TODO: confirm
+    pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
     break;
   }
 

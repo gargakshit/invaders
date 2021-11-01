@@ -90,6 +90,8 @@ class CPU {
   // It sets the 16-bit operand (register pair) from the opcode
   // `((opcode >> 4) & 0x3)` encoded using little-endian
   inline void SetRP(uint8_t opcode, uint8_t value1, uint8_t value2);
+  // It checks the branch condition based on the opcode `((opcode >> 3) & 0x7)`
+  inline bool BranchCondition(uint8_t opcode);
 
   void ExecuteOpcode();
 
