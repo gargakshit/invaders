@@ -367,6 +367,42 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
+  // RLC
+  case 0x07: {
+    uint8_t oldA = a;
+    a = ((oldA & 0x80) >> 7) | (oldA << 1);
+    flags.cy = (oldA & 0x80) == 0x80;
+    break;
+  }
+
+  // RAL
+  case 0x17: {
+    uint8_t oldA = a;
+    a = flags.cy | (oldA << 1);
+    flags.cy = (oldA & 0x80) == 0x80;
+    break;
+  }
+
+  // DAA
+  case 0x27: {
+    // Binary coded decimal ugh...
+    if ((a & 0xf) > 9) {
+      a += 6;
+    }
+    if ((a & 0xf0) > 0x90) {
+      uint16_t res = (uint16_t)a + 0x60;
+      a = res & 0xff;
+      ArithFlagsA(res);
+    }
+    break;
+  }
+
+  // STC
+  case 0x37: {
+    flags.cy = 1;
+    break;
+  }
+
   default: {
     UnimplementedOpcode();
     break;
