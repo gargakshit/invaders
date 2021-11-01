@@ -1,11 +1,21 @@
 #include <functional>
 #include <stdint.h>
 
+// Returns the register pair (a, b)
 #define GET_RP(a, b) (((uint16_t)a << 8) | (uint16_t)b)
+
+// Set the register pair (a, b) with (val) in little-endian
 #define SET_RP(a, b, val)                                                      \
   do {                                                                         \
     a = val >> 8;                                                              \
     b = val & 0xFF;                                                            \
+  } while (0)
+
+// Set the register pair (a, b) with (val1, val2) in little-endian
+#define SET_RP8(a, b, val1, val2)                                              \
+  do {                                                                         \
+    a = val2;                                                                  \
+    b = val1;                                                                  \
   } while (0)
 
 namespace invaders {
@@ -77,6 +87,9 @@ class CPU {
   // It sets the 16-bit operand (register pair) from the opcode
   // `((opcode >> 4) & 0x3)`
   inline void SetRP(uint8_t opcode, uint16_t value);
+  // It sets the 16-bit operand (register pair) from the opcode
+  // `((opcode >> 4) & 0x3)` encoded using little-endian
+  inline void SetRP(uint8_t opcode, uint8_t value1, uint8_t value2);
 
   void ExecuteOpcode();
 

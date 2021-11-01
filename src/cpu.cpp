@@ -121,6 +121,17 @@ inline void CPU::SetRP(uint8_t opcode, uint16_t value) {
   }
 }
 
+inline void CPU::SetRP(uint8_t opcode, uint8_t value1, uint8_t value2) {
+  // Match with the first byte
+  switch ((opcode >> 4) & 0x3) {
+  case 0: SET_RP8(b, c, value1, value2); break;
+  case 1: SET_RP8(d, e, value1, value2); break;
+  case 2: SET_RP8(h, l, value1, value2); break;
+  case 3: sp = (uint16_t)value1 | ((uint16_t)value2 << 8); break;
+  default: PANIC("Impossible state");
+  }
+}
+
 void CPU::ExecuteOpcode() {
   uint8_t opcode = ReadBus(pc);
   pc += 1;
@@ -241,7 +252,7 @@ void CPU::ExecuteOpcode() {
   case 0x06: case 0x0E: case 0x16: case 0x1E: case 0x26: case 0x2E: case 0x36:
   case 0x3E: {
     // clang-format on
-    SetOperand8_0(opcode, ReadBus(pc + 1));
+    SetOperand8_0(opcode, ReadBus(pc));
     ++pc;
     break;
   }
@@ -294,6 +305,15 @@ void CPU::ExecuteOpcode() {
     SET_RP(h, l, (uint16_t)res);
     // Set the carry flag
     flags.cy = (res & 0xffff0000) != 0;
+    break;
+  }
+
+  // LXI operand,u16
+  // clang-format off
+  case 0x01: case 0x11: case 0x21: case 0x31: {
+    // clang-format on
+    SetRP(opcode, ReadBus(pc), ReadBus(pc + 1));
+    pc += 2;
     break;
   }
 

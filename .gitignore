@@ -2,4 +2,7 @@
 *build*/
 
 # Cache
-.cache
+.cache/
+
+# Temporary files
+tmp/
