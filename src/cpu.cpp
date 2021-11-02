@@ -653,6 +653,17 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
+  // XCHG
+  case 0xeb: {
+    uint8_t tmp1 = d;
+    uint8_t tmp2 = e;
+    d = h;
+    e = l;
+    h = tmp1;
+    l = tmp2;
+    break;
+  }
+
   default: {
     UnimplementedOpcode();
     break;
