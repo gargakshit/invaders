@@ -614,6 +614,18 @@ void CPU::ExecuteOpcode() {
     l = tmp2;
   } break;
 
+  // SPHL
+  case 0xf9: {
+    sp = GET_RP(h, l);
+  } break;
+
+  // XTHL
+  case 0xe3: {
+    uint16_t tmp = GET_RP(h, l);
+    SET_RP(h, l, StackPop());
+    StackPush(tmp);
+  } break;
+
   default: {
     UnimplementedOpcode();
   } break;
