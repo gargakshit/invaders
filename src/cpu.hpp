@@ -67,9 +67,6 @@ class CPU {
     };
   } flags;
 
-  // Are interrupts enabled
-  bool interrupts;
-
   // Utility functions for register pairs. Inline'd for the best performance
   inline uint16_t GetHL();
 
@@ -122,6 +119,9 @@ class CPU {
 
 public:
   CPU(ReadFunction, WriteFunction);
+
+  // Are interrupts enabled
+  bool interrupts = true;
 
   void Reset();
   void Tick();

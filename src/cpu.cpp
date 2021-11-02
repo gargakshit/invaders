@@ -17,6 +17,7 @@ void CPU::Reset() {
   e = 0;
   h = 0;
   l = 0;
+  interrupts = true;
 }
 
 inline int CPU::Parity(int x, int size) {
@@ -624,6 +625,16 @@ void CPU::ExecuteOpcode() {
     uint16_t tmp = GET_RP(h, l);
     SET_RP(h, l, StackPop());
     StackPush(tmp);
+  } break;
+
+  // DI
+  case 0xf3: {
+    interrupts = false;
+  } break;
+
+  // EI
+  case 0xfb: {
+    interrupts = true;
   } break;
 
   default: {
