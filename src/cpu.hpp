@@ -20,8 +20,11 @@
   } while (0)
 
 namespace invaders {
-typedef std::function<uint8_t(uint16_t)> ReadFunction;
-typedef std::function<void(uint16_t, uint8_t)> WriteFunction;
+typedef std::function<uint8_t(uint16_t)> ReadBusFunction;
+typedef std::function<void(uint16_t, uint8_t)> WriteBusFunction;
+
+typedef std::function<uint8_t(uint8_t)> ReadIOFunction;
+typedef std::function<void(uint8_t, uint8_t)> WriteIOFunction;
 
 #pragma once
 class CPU {
@@ -79,8 +82,11 @@ class CPU {
   void LogicFlagsA();
 
   // Bus operations
-  ReadFunction ReadBus;
-  WriteFunction WriteBus;
+  ReadBusFunction ReadBus;
+  WriteBusFunction WriteBus;
+  // IO operations
+  ReadIOFunction ReadIO;
+  WriteIOFunction WriteIO;
 
   inline void UnimplementedOpcode();
 
@@ -118,7 +124,7 @@ class CPU {
   void ExecuteOpcode();
 
 public:
-  CPU(ReadFunction, WriteFunction);
+  CPU(ReadBusFunction, WriteBusFunction, ReadIOFunction, WriteIOFunction);
 
   // Are interrupts enabled
   bool interrupts = true;

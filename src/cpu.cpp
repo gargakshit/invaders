@@ -4,8 +4,9 @@
 #include "utils.hpp"
 
 namespace invaders {
-CPU::CPU(ReadFunction read, WriteFunction write)
-    : ReadBus(read), WriteBus(write) {}
+CPU::CPU(ReadBusFunction readBus, WriteBusFunction writeBus,
+         ReadIOFunction readIO, WriteIOFunction writeIO)
+    : ReadBus(readBus), WriteBus(writeBus), ReadIO(readIO), WriteIO(writeIO) {}
 
 void CPU::Reset() {
   pc = 0;
@@ -534,7 +535,7 @@ void CPU::ExecuteOpcode() {
   // ADI u8
   case 0xc6: {
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a + (uint16_t)ReadBus(pc + 1);
+    uint16_t res = (uint16_t)a + (uint16_t)ReadBus(pc);
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
@@ -543,7 +544,7 @@ void CPU::ExecuteOpcode() {
   // ACI u8
   case 0xce: {
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a + (uint16_t)ReadBus(pc + 1) + flags.cy;
+    uint16_t res = (uint16_t)a + (uint16_t)ReadBus(pc) + flags.cy;
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
@@ -552,7 +553,7 @@ void CPU::ExecuteOpcode() {
   // SUI u8
   case 0xd6: {
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1);
+    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc);
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
@@ -561,7 +562,7 @@ void CPU::ExecuteOpcode() {
   // ABI u8
   case 0xde: {
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1) - flags.cy;
+    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc) - flags.cy;
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
@@ -569,21 +570,21 @@ void CPU::ExecuteOpcode() {
 
   // ANI u8
   case 0xe6: {
-    a &= ReadBus(pc + 1);
+    a &= ReadBus(pc);
     ++pc;
     LogicFlagsA();
   } break;
 
   // XRI u8
   case 0xee: {
-    a ^= ReadBus(pc + 1);
+    a ^= ReadBus(pc);
     ++pc;
     LogicFlagsA();
   } break;
 
   // ORI u8
   case 0xf6: {
-    a |= ReadBus(pc + 1);
+    a |= ReadBus(pc);
     ++pc;
     LogicFlagsA();
   } break;
@@ -591,7 +592,7 @@ void CPU::ExecuteOpcode() {
   // CPI u8
   case 0xfe: {
     // Use higher precision for easier flag calculation
-    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1);
+    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc);
     ArithFlagsA(res);
     ++pc;
   } break;
@@ -635,6 +636,30 @@ void CPU::ExecuteOpcode() {
   // EI
   case 0xfb: {
     interrupts = true;
+  } break;
+
+  // OUT d8
+  case 0xd3: {
+    uint8_t port = ReadBus(pc);
+    ++pc;
+
+    if (port >= 8) {
+      PANIC("I/O port out of bounds");
+    } else {
+      WriteIO(port, a);
+    }
+  } break;
+
+  // IN d8
+  case 0xdb: {
+    uint8_t port = ReadBus(pc);
+    ++pc;
+
+    if (port >= 8) {
+      PANIC("I/O port out of bounds");
+    } else {
+      a = ReadIO(port);
+    }
   } break;
 
   default: {
