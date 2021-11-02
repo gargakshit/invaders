@@ -556,6 +556,79 @@ void CPU::ExecuteOpcode() {
     break;
   }
 
+  // ADI u8
+  case 0xc6: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a + (uint16_t)ReadBus(pc + 1);
+    ++pc;
+    ArithFlagsA(res);
+    a = res & 0xff;
+    break;
+  }
+
+  // ACI u8
+  case 0xce: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a + (uint16_t)ReadBus(pc + 1) + flags.cy;
+    ++pc;
+    ArithFlagsA(res);
+    a = res & 0xff;
+    break;
+  }
+
+  // SUI u8
+  case 0xd6: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1);
+    ++pc;
+    ArithFlagsA(res);
+    a = res & 0xff;
+    break;
+  }
+
+  // ABI u8
+  case 0xde: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1) - flags.cy;
+    ++pc;
+    ArithFlagsA(res);
+    a = res & 0xff;
+    break;
+  }
+
+  // ANI u8
+  case 0xe6: {
+    a &= ReadBus(pc + 1);
+    ++pc;
+    LogicFlagsA();
+    break;
+  }
+
+  // XRI u8
+  case 0xee: {
+    a ^= ReadBus(pc + 1);
+    ++pc;
+    LogicFlagsA();
+    break;
+  }
+
+  // ORI u8
+  case 0xf6: {
+    a |= ReadBus(pc + 1);
+    ++pc;
+    LogicFlagsA();
+    break;
+  }
+
+  // CPI u8
+  case 0xfe: {
+    // Use higher precision for easier flag calculation
+    uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1);
+    ArithFlagsA(res);
+    ++pc;
+    break;
+  }
+
   default: {
     UnimplementedOpcode();
     break;
