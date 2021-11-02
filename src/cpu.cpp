@@ -147,6 +147,40 @@ inline bool CPU::BranchCondition(uint8_t opcode) {
   }
 }
 
+inline uint16_t CPU::GetStackRP(uint8_t opcode) {
+  // Match with the last byte
+  switch ((opcode >> 4) & 0x03) {
+  case 0: return GET_RP(b, c);
+  case 1: return GET_RP(d, e);
+  case 2: return GET_RP(h, l);
+  case 3: return GET_RP(a, flags.all);
+  default: PANIC("Impossible state");
+  }
+}
+
+inline void CPU::SetStackRP(uint8_t opcode, uint16_t value) {
+  // Match with the last byte
+  switch ((opcode >> 4) & 0x03) {
+  case 0: SET_RP(b, c, value);
+  case 1: SET_RP(d, e, value);
+  case 2: SET_RP(h, l, value);
+  case 3: SET_RP(a, flags.all, value);
+  default: PANIC("Impossible state");
+  }
+}
+
+inline void CPU::StackPush(uint16_t data) {
+  WriteBus(sp - 1, (data >> 8) & 0xff);
+  WriteBus(sp - 2, data & 0xff);
+  sp -= 2;
+}
+
+inline uint16_t CPU::StackPop() {
+  uint16_t ret = (uint16_t)ReadBus(sp) | ((uint16_t)ReadBus(sp + 1) << 8);
+  sp += 2;
+  return ret;
+}
+
 void CPU::ExecuteOpcode() {
   uint8_t opcode = ReadBus(pc);
   pc += 1;
@@ -474,11 +508,7 @@ void CPU::ExecuteOpcode() {
   case 0xfc: {
     // clang-format on
     if (BranchCondition(opcode)) {
-      // TODO: confirm
-      uint16_t ret = pc + 2;
-      WriteBus(sp - 1, (ret >> 8) & 0xff);
-      WriteBus(sp - 2, ret & 0xff);
-      sp -= 2;
+      StackPush(pc + 2);
       pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
     } else {
       pc += 2;
@@ -488,11 +518,7 @@ void CPU::ExecuteOpcode() {
 
   // CALL u16
   case 0xcd: {
-    // TODO: confirm
-    uint16_t ret = pc + 2;
-    WriteBus(sp - 1, (ret >> 8) & 0xff);
-    WriteBus(sp - 2, ret & 0xff);
-    sp -= 2;
+    StackPush(pc + 2);
     pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
     break;
   }
@@ -503,20 +529,30 @@ void CPU::ExecuteOpcode() {
   case 0xf8: {
     // clang-format on
     if (BranchCondition(opcode)) {
-      // TODO: confirm
-      pc = (uint16_t)ReadBus(sp) | ((uint16_t)ReadBus(sp + 1) << 8);
-      sp += 2;
-    } else {
-      pc += 2;
+      pc = StackPop();
     }
     break;
   }
 
   // RET u16
   case 0xc9: {
-    // TODO: confirm
-    pc = (uint16_t)ReadBus(sp) | ((uint16_t)ReadBus(sp + 1) << 8);
-    sp += 2;
+    pc = StackPop();
+    break;
+  }
+
+  // PUSH operand
+  // clang-format off
+  case 0xc5: case 0xd5: case 0xe5: case 0xf5: {
+    // clang-format on
+    StackPush(GetStackRP(opcode));
+    break;
+  }
+
+  // POP operand
+  // clang-format off
+  case 0xc1: case 0xd1: case 0xe1: case 0xf1: {
+    // clang-format on
+    SetStackRP(opcode, StackPop());
     break;
   }
 

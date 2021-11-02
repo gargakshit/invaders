@@ -41,18 +41,29 @@ class CPU {
 
   // Flags
   struct {
-    // Zero
-    uint8_t z : 1;
-    // Sign
-    uint8_t s : 1;
-    // Parity
-    uint8_t p : 1;
-    // Carry
-    uint8_t cy : 1;
-    // Auxilary Carry
-    uint8_t ac : 1;
-    // Padding the extra bytes :)
-    uint8_t pad : 3;
+    union {
+      struct {
+        // Carry
+        uint8_t cy : 1;
+        // Padding
+        uint8_t pad : 1;
+        // Parity
+        uint8_t p : 1;
+        // Moar padding
+        uint8_t pad2 : 1;
+        // Auxilary Carry
+        uint8_t ac : 1;
+        // Even moar padding
+        uint8_t pad3 : 1;
+        // Zero
+        uint8_t z : 1;
+        // Sign
+        uint8_t s : 1;
+      };
+
+      // All flags
+      uint8_t all;
+    };
   } flags;
 
   // Are interrupts enabled
@@ -92,6 +103,16 @@ class CPU {
   inline void SetRP(uint8_t opcode, uint8_t value1, uint8_t value2);
   // It checks the branch condition based on the opcode `((opcode >> 3) & 0x7)`
   inline bool BranchCondition(uint8_t opcode);
+  // It returns the 16-bit operand (register pair) from the opcode for `PUSH`.
+  // `((opcode >> 4) & 0x3)`
+  inline uint16_t GetStackRP(uint8_t opcode);
+  // It returns the 16-bit operand (register pair) from the opcode for `POP`.
+  // `((opcode >> 4) & 0x3)`
+  inline void SetStackRP(uint8_t opcode, uint16_t value);
+
+  // TODO: confirm stack ops
+  inline void StackPush(uint16_t data);
+  inline uint16_t StackPop();
 
   void ExecuteOpcode();
 
