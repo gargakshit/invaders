@@ -201,9 +201,7 @@ void CPU::ExecuteOpcode() {
 
   switch (opcode) {
   // NOP
-  case 0x00: {
-    break;
-  }
+  case 0x00: break;
 
   // MOV
   // clang-format off
@@ -218,8 +216,7 @@ void CPU::ExecuteOpcode() {
   case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F: {
     // clang-format on
     SetOperand8_0(opcode, GetOperand8_1(opcode));
-    break;
-  }
+  } break;
 
   // ADD operand
   // clang-format off
@@ -230,8 +227,7 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a + (uint16_t)GetOperand8_1(opcode);
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // ADC operand
   // clang-format off
@@ -242,8 +238,7 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a + (uint16_t)GetOperand8_1(opcode) + flags.cy;
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // SUB operand
   // clang-format off
@@ -254,8 +249,7 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a - (uint16_t)GetOperand8_1(opcode);
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // SBB operand
   // clang-format off
@@ -266,8 +260,7 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a - (uint16_t)GetOperand8_1(opcode) - flags.cy;
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // ANA operand
   // clang-format off
@@ -276,8 +269,7 @@ void CPU::ExecuteOpcode() {
     // clang-format on
     a &= GetOperand8_1(opcode);
     LogicFlagsA();
-    break;
-  }
+  } break;
 
   // XRA operand
   // clang-format off
@@ -286,8 +278,7 @@ void CPU::ExecuteOpcode() {
     // clang-format on
     a ^= GetOperand8_1(opcode);
     LogicFlagsA();
-    break;
-  }
+  } break;
 
   // ORA operand
   // clang-format off
@@ -296,8 +287,7 @@ void CPU::ExecuteOpcode() {
     // clang-format on
     a |= GetOperand8_1(opcode);
     LogicFlagsA();
-    break;
-  }
+  } break;
 
   // CMP operand
   // clang-format off
@@ -307,8 +297,7 @@ void CPU::ExecuteOpcode() {
     // Use higher precision for easier flag calculation
     uint16_t res = (uint16_t)a - (uint16_t)GetOperand8_1(opcode);
     ArithFlagsA(res);
-    break;
-  }
+  } break;
 
   // MVI operand,u8
   // clang-format off
@@ -317,8 +306,7 @@ void CPU::ExecuteOpcode() {
     // clang-format on
     SetOperand8_0(opcode, ReadBus(pc));
     ++pc;
-    break;
-  }
+  } break;
 
   // INR operand
   // clang-format off
@@ -328,8 +316,7 @@ void CPU::ExecuteOpcode() {
     uint8_t result = GetOperand8_0(opcode) + 1;
     SetOperand8_0(opcode, result);
     ArithFlagsA(result, false);
-    break;
-  }
+  } break;
 
   // DCR operand
   // clang-format off
@@ -339,24 +326,21 @@ void CPU::ExecuteOpcode() {
     uint8_t result = GetOperand8_0(opcode) - 1;
     SetOperand8_0(opcode, result);
     ArithFlagsA(result, false);
-    break;
-  }
+  } break;
 
   // INX operand
   // clang-format off
   case 0x03: case 0x13: case 0x23: case 0x33: {
     // clang-format on
     SetRP(opcode, GetRP(opcode) + 1);
-    break;
-  }
+  } break;
 
   // DCX operand
   // clang-format off
   case 0x0b: case 0x1b: case 0x2b: case 0x3b: {
     // clang-format on
     SetRP(opcode, GetRP(opcode) - 1);
-    break;
-  }
+  } break;
 
   // DAD operand
   // clang-format off
@@ -368,8 +352,7 @@ void CPU::ExecuteOpcode() {
     SET_RP(h, l, (uint16_t)res);
     // Set the carry flag
     flags.cy = (res & 0xffff0000) != 0;
-    break;
-  }
+  } break;
 
   // LXI operand,u16
   // clang-format off
@@ -377,16 +360,14 @@ void CPU::ExecuteOpcode() {
     // clang-format on
     SetRP(opcode, ReadBus(pc), ReadBus(pc + 1));
     pc += 2;
-    break;
-  }
+  } break;
 
   // STAX operand
   // clang-format off
   case 0x02: case 0x12: {
     // clang-format on
     WriteBus(GetRP(opcode), a);
-    break;
-  }
+  } break;
 
   // SHLD u16
   case 0x22: {
@@ -394,24 +375,21 @@ void CPU::ExecuteOpcode() {
     WriteBus(offset, l);
     WriteBus(offset + 1, h);
     pc += 2;
-    break;
-  }
+  } break;
 
   // STA u16
   case 0x32: {
     uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
     WriteBus(offset, a);
     pc += 2;
-    break;
-  }
+  } break;
 
   // LDAX operand
   // clang-format off
   case 0x0a: case 0x1a: {
     // clang-format on
     a = ReadBus(GetRP(opcode));
-    break;
-  }
+  } break;
 
   // LDHL u16
   case 0x2a: {
@@ -419,32 +397,28 @@ void CPU::ExecuteOpcode() {
     l = ReadBus(offset);
     h = ReadBus(offset + 1);
     pc += 2;
-    break;
-  }
+  } break;
 
   // LDA u16
   case 0x3a: {
     uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
     a = ReadBus(offset);
     pc += 2;
-    break;
-  }
+  } break;
 
   // RLC
   case 0x07: {
     uint8_t oldA = a;
     a = ((oldA & 0x80) >> 7) | (oldA << 1);
     flags.cy = (oldA & 0x80) == 0x80;
-    break;
-  }
+  } break;
 
   // RAL
   case 0x17: {
     uint8_t oldA = a;
     a = flags.cy | (oldA << 1);
     flags.cy = (oldA & 0x80) == 0x80;
-    break;
-  }
+  } break;
 
   // DAA
   case 0x27: {
@@ -457,43 +431,37 @@ void CPU::ExecuteOpcode() {
       a = res & 0xff;
       ArithFlagsA(res);
     }
-    break;
-  }
+  } break;
 
   // STC
   case 0x37: {
     flags.cy = 1;
-    break;
-  }
+  } break;
 
   // RRC
   case 0x0f: {
     uint8_t oldA = a;
     a = ((oldA & 0x1) << 7) | (oldA >> 1);
     flags.cy = (oldA & 0x1) == 0x1;
-    break;
-  }
+  } break;
 
   // RAR
   case 0x1f: {
     uint8_t oldA = a;
     a = (flags.cy << 7) | (oldA >> 1);
     flags.cy = (oldA & 0x1) == 0x1;
-    break;
-  }
+  } break;
 
   // CMA
   case 0x2f: {
     a = ~a;
-    break;
-  }
+  } break;
 
   // CMC
   case 0x3f: {
     // TODO: confirm
     flags.cy = ~flags.cy;
-    break;
-  }
+  } break;
 
   // JUMP condition,u16 (JZ u16, JPE u16, etc)
   // clang-format off
@@ -506,15 +474,13 @@ void CPU::ExecuteOpcode() {
     } else {
       pc += 2;
     }
-    break;
-  }
+  } break;
 
   // JMP u16
   case 0xc3: {
     // TODO: confirm
     pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
-    break;
-  }
+  } break;
 
   // CALL condition,u16 (CZ u16, CPE u16, etc)
   // clang-format off
@@ -527,15 +493,13 @@ void CPU::ExecuteOpcode() {
     } else {
       pc += 2;
     }
-    break;
-  }
+  } break;
 
   // CALL u16
   case 0xcd: {
     StackPush(pc + 2);
     pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
-    break;
-  }
+  } break;
 
   // RET condition,u16 (RZ u16, RPE u16, etc)
   // clang-format off
@@ -545,30 +509,26 @@ void CPU::ExecuteOpcode() {
     if (BranchCondition(opcode)) {
       pc = StackPop();
     }
-    break;
-  }
+  } break;
 
   // RET u16
   case 0xc9: {
     pc = StackPop();
-    break;
-  }
+  } break;
 
   // PUSH operand
   // clang-format off
   case 0xc5: case 0xd5: case 0xe5: case 0xf5: {
     // clang-format on
     StackPush(GetStackRP(opcode));
-    break;
-  }
+  } break;
 
   // POP operand
   // clang-format off
   case 0xc1: case 0xd1: case 0xe1: case 0xf1: {
     // clang-format on
     SetStackRP(opcode, StackPop());
-    break;
-  }
+  } break;
 
   // ADI u8
   case 0xc6: {
@@ -577,8 +537,7 @@ void CPU::ExecuteOpcode() {
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // ACI u8
   case 0xce: {
@@ -587,8 +546,7 @@ void CPU::ExecuteOpcode() {
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // SUI u8
   case 0xd6: {
@@ -597,8 +555,7 @@ void CPU::ExecuteOpcode() {
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // ABI u8
   case 0xde: {
@@ -607,32 +564,28 @@ void CPU::ExecuteOpcode() {
     ++pc;
     ArithFlagsA(res);
     a = res & 0xff;
-    break;
-  }
+  } break;
 
   // ANI u8
   case 0xe6: {
     a &= ReadBus(pc + 1);
     ++pc;
     LogicFlagsA();
-    break;
-  }
+  } break;
 
   // XRI u8
   case 0xee: {
     a ^= ReadBus(pc + 1);
     ++pc;
     LogicFlagsA();
-    break;
-  }
+  } break;
 
   // ORI u8
   case 0xf6: {
     a |= ReadBus(pc + 1);
     ++pc;
     LogicFlagsA();
-    break;
-  }
+  } break;
 
   // CPI u8
   case 0xfe: {
@@ -640,8 +593,7 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1);
     ArithFlagsA(res);
     ++pc;
-    break;
-  }
+  } break;
 
   // RST u8
   // clang-format off
@@ -650,8 +602,7 @@ void CPU::ExecuteOpcode() {
     // clang-format on
     StackPush(pc + 2);
     pc = GetRSTAddr(opcode);
-    break;
-  }
+  } break;
 
   // XCHG
   case 0xeb: {
@@ -661,13 +612,11 @@ void CPU::ExecuteOpcode() {
     e = l;
     h = tmp1;
     l = tmp2;
-    break;
-  }
+  } break;
 
   default: {
     UnimplementedOpcode();
-    break;
-  }
+  } break;
   }
 }
 } // namespace invaders
