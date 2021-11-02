@@ -161,10 +161,10 @@ inline uint16_t CPU::GetStackRP(uint8_t opcode) {
 inline void CPU::SetStackRP(uint8_t opcode, uint16_t value) {
   // Match with the last byte
   switch ((opcode >> 4) & 0x03) {
-  case 0: SET_RP(b, c, value);
-  case 1: SET_RP(d, e, value);
-  case 2: SET_RP(h, l, value);
-  case 3: SET_RP(a, flags.all, value);
+  case 0: SET_RP(b, c, value); break;
+  case 1: SET_RP(d, e, value); break;
+  case 2: SET_RP(h, l, value); break;
+  case 3: SET_RP(a, flags.all, value); break;
   default: PANIC("Impossible state");
   }
 }
@@ -179,6 +179,20 @@ inline uint16_t CPU::StackPop() {
   uint16_t ret = (uint16_t)ReadBus(sp) | ((uint16_t)ReadBus(sp + 1) << 8);
   sp += 2;
   return ret;
+}
+
+inline uint16_t CPU::GetRSTAddr(uint8_t opcode) {
+  switch (opcode) {
+  case 0: return 0x0000;
+  case 1: return 0x0008;
+  case 2: return 0x0010;
+  case 3: return 0x0018;
+  case 4: return 0x0020;
+  case 5: return 0x0028;
+  case 6: return 0x0030;
+  case 7: return 0x0038;
+  default: PANIC("Impossible State");
+  }
 }
 
 void CPU::ExecuteOpcode() {
@@ -626,6 +640,16 @@ void CPU::ExecuteOpcode() {
     uint16_t res = (uint16_t)a - (uint16_t)ReadBus(pc + 1);
     ArithFlagsA(res);
     ++pc;
+    break;
+  }
+
+  // RST u8
+  // clang-format off
+  case 0xc7: case 0xcf: case 0xd7: case 0xdf: case 0xe7: case 0xef: case 0xf7:
+  case 0xff: {
+    // clang-format on
+    StackPush(pc + 2);
+    pc = GetRSTAddr(opcode);
     break;
   }
 

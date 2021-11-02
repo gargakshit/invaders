@@ -109,6 +109,9 @@ class CPU {
   // It returns the 16-bit operand (register pair) from the opcode for `POP`.
   // `((opcode >> 4) & 0x3)`
   inline void SetStackRP(uint8_t opcode, uint16_t value);
+  // It returns the 16-bit address from the opcode for `RST`.
+  // `((opcode >> 3) & 0x7)`
+  inline uint16_t GetRSTAddr(uint8_t opcode);
 
   // TODO: confirm stack ops
   inline void StackPush(uint16_t data);
