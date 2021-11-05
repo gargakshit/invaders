@@ -1,0 +1,15 @@
+{
+  "name": "invaders",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "sdl2",
+    {
+      "name": "imgui",
+      "features": [
+        "docking-experimental",
+        "sdl2-binding",
+        "opengl3-binding"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,13 @@
+#include <algorithm>
 #include <stdint.h>
 
 #include "cpu.hpp"
 #include "utils.hpp"
+
+#ifdef PRINT_CPU_STATUS
+#include <iomanip>
+#include <iostream>
+#endif
 
 namespace invaders {
 CPU::CPU(ReadBusFunction readBus, WriteBusFunction writeBus,
@@ -199,6 +205,11 @@ inline uint16_t CPU::GetRSTAddr(uint8_t opcode) {
 }
 
 void CPU::ExecuteOpcode(uint8_t opcode) {
+#ifdef PRINT_CPU_STATUS
+  std::cerr << "Executing: 0x" << std::hex << std::setfill('0') << std::setw(2)
+            << +opcode << std::endl;
+#endif
+
   switch (opcode) {
   // NOP
   case 0x00: break;
