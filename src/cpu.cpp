@@ -4,7 +4,7 @@
 #include "cpu.hpp"
 #include "utils.hpp"
 
-// #define PRINT_CPU_STATUS
+#define PRINT_CPU_STATUS
 
 #ifdef PRINT_CPU_STATUS
 #include <iomanip>
@@ -211,7 +211,7 @@ inline uint16_t CPU::GetRSTAddr(uint8_t opcode) {
 
 void CPU::ExecuteOpcode(uint8_t opcode) {
 #ifdef PRINT_CPU_STATUS
-  std::cerr << "Executing: 0x" << std::hex << std::setfill('0') << std::setw(2)
+  std::cout << "Executing: 0x" << std::hex << std::setfill('0') << std::setw(2)
             << +opcode << std::endl;
 #endif
 
@@ -367,7 +367,7 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
     uint32_t res = (uint32_t)GetHL() + (uint32_t)val;
     SET_RP(h, l, (uint16_t)res);
     // Set the carry flag
-    flags.cy = (res & 0xffff0000) != 0;
+    flags.cy = (res & 0xffff0000) > 0;
   } break;
 
   // LXI operand,u16
@@ -697,6 +697,11 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
     } else {
       a = ReadIO(port);
     }
+  } break;
+
+  // PCHL
+  case 0xe9: {
+    pc = GET_RP(h, l);
   } break;
 
   default: {

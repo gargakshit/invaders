@@ -5,8 +5,6 @@
 namespace invaders {
 #pragma once
 class Bus {
-  CPU cpu;
-
   // Keep the full addressable range as memory for now
   uint8_t mem[(1 << 16) - 1] = {0};
 
@@ -17,6 +15,8 @@ class Bus {
   uint8_t ReadIO(uint8_t);
 
 public:
+  CPU cpu;
+
   bool LoadFileAt(std::string path, uint16_t start, bool cpm = false);
 
   // CPU

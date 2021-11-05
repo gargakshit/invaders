@@ -7,9 +7,9 @@
 // Set the register pair (a, b) with (val) in little-endian
 #define SET_RP(a, b, val)                                                      \
   do {                                                                         \
-    uint16_t res = val;                                                        \
-    a = res >> 8;                                                              \
-    b = res & 0xFF;                                                            \
+    uint16_t _res = val;                                                        \
+    a = _res >> 8;                                                              \
+    b = _res & 0xFF;                                                            \
   } while (0)
 
 // Set the register pair (a, b) with (val1, val2) in little-endian

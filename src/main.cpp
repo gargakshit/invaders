@@ -15,6 +15,9 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl.h>
 
+#include <chrono>
+#include <thread>
+
 #include "bus.hpp"
 #include "font.h"
 
@@ -30,10 +33,16 @@ void initializePlatform() {}
 
 int main(int argc, char **args) {
   invaders::Bus bus;
-  bus.LoadFileAt("tmp/cpudiag.bin", 0x0100, true);
+  bus.ResetCPU();
+
+  // CPU Diagnostics moment
+  if (!bus.LoadFileAt("tmp/cpudiag.bin", 0x0100, true)) {
+    return -1;
+  }
 
   while (true) {
     bus.TickCPU();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
