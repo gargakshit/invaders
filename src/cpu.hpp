@@ -1,8 +1,6 @@
 #include <functional>
 #include <stdint.h>
 
-#define PRINT_CPU_STATUS
-
 // Returns the register pair (a, b)
 #define GET_RP(a, b) (((uint16_t)a << 8) | (uint16_t)b)
 

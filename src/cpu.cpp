@@ -4,10 +4,15 @@
 #include "cpu.hpp"
 #include "utils.hpp"
 
+// #define PRINT_CPU_STATUS
+
 #ifdef PRINT_CPU_STATUS
 #include <iomanip>
 #include <iostream>
 #endif
+
+// Basic CP/M emulation for cpudiag tests. Uncomment to enable
+#define CPM_EMU
 
 namespace invaders {
 CPU::CPU(ReadBusFunction readBus, WriteBusFunction writeBus,
@@ -508,6 +513,29 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
 
   // CALL u16
   case 0xcd: {
+#ifdef CPM_EMU
+    // Adapted from http://www.emulator101.com/full-8080-emulation.html
+    if ((((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc)) == 5) {
+      if (c == 9) {
+        uint16_t offset = (d << 8) | e;
+
+        uint8_t i = 0;
+        char str = ReadBus(offset + 3 + i);
+        while (str != '$') {
+          printf("%c", str);
+          ++i;
+          str = ReadBus(offset + 3 + i);
+        }
+        printf("\n");
+      } else if (c == 2) {
+        printf("print char routine called\n");
+      }
+    } else if ((((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc)) ==
+               0) {
+      exit(0);
+    }
+#endif
+
     StackPush(pc + 2);
     pc = ((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc);
   } break;

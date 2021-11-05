@@ -15,12 +15,12 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl.h>
 
+#include "bus.hpp"
 #include "font.h"
 
 #ifdef _WIN32
-#pragma comment(lib, "Shcore.lib")
+#pragma comment(lib, "shcore")
 #include <ShellScalingAPI.h>
-
 void initializePlatform() {
   SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 }
@@ -29,6 +29,13 @@ void initializePlatform() {}
 #endif
 
 int main(int argc, char **args) {
+  invaders::Bus bus;
+  bus.LoadFileAt("tmp/cpudiag.bin", 0x0100, true);
+
+  while (true) {
+    bus.TickCPU();
+  }
+
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     std::cerr << "SDL Error: " << SDL_GetError() << std::endl;
     return -1;
@@ -140,9 +147,6 @@ int main(int argc, char **args) {
     ImGui::Render();
 
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-    // glClearColor(clear_color.x * clear_color.w, clear_color.y *
-    // clear_color.w,
-    //              clear_color.z * clear_color.w, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

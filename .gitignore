@@ -9,3 +9,6 @@ tmp/
 
 # Imgui Stuff
 imgui.ini
+
+# Vcpkg stuff
+vcpkg_installed/
