@@ -22,7 +22,7 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 
 # Puts all .cpp files inside src
-file(GLOB SOURCES_INVADERS src/*.cpp)
+file(GLOB_RECURSE SOURCES_INVADERS src/*.cpp)
 
 set(SOURCES
   ${SOURCES_INVADERS}
