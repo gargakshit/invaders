@@ -19,6 +19,7 @@ void CPU::Reset() {
   h = 0;
   l = 0;
   interrupts = true;
+  pendingCycles = 0;
 }
 
 inline int CPU::Parity(int x, int size) {
@@ -197,10 +198,7 @@ inline uint16_t CPU::GetRSTAddr(uint8_t opcode) {
   }
 }
 
-void CPU::ExecuteOpcode() {
-  uint8_t opcode = ReadBus(pc);
-  pc += 1;
-
+void CPU::ExecuteOpcode(uint8_t opcode) {
   switch (opcode) {
   // NOP
   case 0x00: break;
@@ -665,6 +663,17 @@ void CPU::ExecuteOpcode() {
   default: {
     UnimplementedOpcode();
   } break;
+  }
+}
+
+void CPU::Tick() {
+  if (pendingCycles != 0) {
+    --pendingCycles;
+  } else {
+    uint8_t opcode = ReadBus(pc);
+    pendingCycles = cycles[opcode] - 1;
+    pc += 1;
+    ExecuteOpcode(opcode);
   }
 }
 } // namespace invaders
