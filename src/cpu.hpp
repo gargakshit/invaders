@@ -7,9 +7,9 @@
 // Set the register pair (a, b) with (val) in little-endian
 #define SET_RP(a, b, val)                                                      \
   do {                                                                         \
-    uint16_t _res = val;                                                        \
-    a = _res >> 8;                                                              \
-    b = _res & 0xFF;                                                            \
+    uint16_t _res = val;                                                       \
+    a = _res >> 8;                                                             \
+    b = _res & 0xFF;                                                           \
   } while (0)
 
 // Set the register pair (a, b) with (val1, val2) in little-endian
@@ -28,9 +28,6 @@ typedef std::function<void(uint8_t, uint8_t)> WriteIOFunction;
 
 #pragma once
 class CPU {
-  // Program counter
-  uint16_t pc;
-
   // Stack pointer
   uint16_t sp;
 
@@ -145,6 +142,9 @@ class CPU {
 
 public:
   CPU(ReadBusFunction, WriteBusFunction, ReadIOFunction, WriteIOFunction);
+
+  // Program counter
+  uint16_t pc;
 
   // Are interrupts enabled
   bool interrupts = true;

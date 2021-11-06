@@ -54,7 +54,7 @@ uint8_t Bus::ReadIO(uint8_t port) {
   }
 }
 
-bool Bus::LoadFileAt(std::string path, uint16_t start, bool diag) {
+bool Bus::LoadFileAt(const std::string path, const uint16_t start) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
     std::cerr << "Unable to load file \"" << path << "\", skipping..."
@@ -71,24 +71,6 @@ bool Bus::LoadFileAt(std::string path, uint16_t start, bool diag) {
   }
 
   file.close();
-
-  // CP/M CPU diagnostics program
-  if (diag) {
-    // Patch the program to jump to 0x0100
-    mem[0] = 0xc3;
-    mem[1] = 0;
-    mem[2] = 0x01;
-
-    // Fix the stack pointer from 0x6ad to 0x7ad
-    // this 0x06 byte 112 in the code, which is
-    // byte 112 + 0x100 = 368 in memory
-    mem[368] = 0x7;
-
-    // Skip DAA test
-    mem[0x59c] = 0xc3; // JMP
-    mem[0x59d] = 0xc2;
-    mem[0x59e] = 0x05;
-  }
 
   return true;
 }

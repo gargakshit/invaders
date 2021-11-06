@@ -30,7 +30,7 @@ class Bus {
 public:
   CPU cpu;
 
-  bool LoadFileAt(std::string path, uint16_t start, bool cpm = false);
+  bool LoadFileAt(const std::string path, const uint16_t start);
 
   // CPU
   void Reset();

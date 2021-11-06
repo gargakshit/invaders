@@ -407,7 +407,7 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
     a = ReadBus(GetRP(opcode));
   } break;
 
-  // LDHL u16
+  // LHLD u16
   case 0x2a: {
     uint16_t offset = (uint16_t)ReadBus(pc) | ((uint16_t)ReadBus(pc + 1) << 8);
     l = ReadBus(offset);
@@ -515,21 +515,24 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
   case 0xcd: {
 #ifdef CPM_EMU
     // Adapted from http://www.emulator101.com/full-8080-emulation.html
-    if ((((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc)) == 5) {
+    if ((((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc)) == 5 ||
+        c == 9) {
       if (c == 9) {
         uint16_t offset = (d << 8) | e;
 
         uint8_t i = 0;
-        char str = ReadBus(offset + 3 + i);
+        char str = ReadBus(offset + i);
         while (str != '$') {
           printf("%c", str);
           ++i;
-          str = ReadBus(offset + 3 + i);
+          str = ReadBus(offset + i);
         }
         printf("\n");
       } else if (c == 2) {
         printf("print char routine called\n");
       }
+    } else if (c == 5 || c == 9) {
+      printf("%c\n", e);
     } else if ((((uint16_t)ReadBus(pc + 1) << 8) | (uint16_t)ReadBus(pc)) ==
                0) {
       exit(0);
