@@ -85,7 +85,7 @@ class CPU {
   ReadIOFunction ReadIO;
   WriteIOFunction WriteIO;
 
-  inline void UnimplementedOpcode();
+  inline void UnimplementedOpcode(uint8_t opcode);
 
   // It returns the first operand by decoding the opcode (opcode >> 3) & 0x7)
   inline uint8_t GetOperand8_0(uint8_t opcode);
@@ -146,10 +146,14 @@ public:
   // Program counter
   uint16_t pc;
 
+  // Last opcode
+  uint8_t opcode;
+
   // Are interrupts enabled
   bool interrupts = true;
 
   void Reset();
   void Tick();
+  void Interrupt(uint8_t vector);
 };
 } // namespace invaders

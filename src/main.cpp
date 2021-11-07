@@ -1,4 +1,3 @@
-#include <SDL_hints.h>
 #include <iostream>
 #include <stdint.h>
 
@@ -15,9 +14,6 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl.h>
 
-#include <chrono>
-#include <thread>
-
 #include "bus.hpp"
 #include "font.h"
 
@@ -32,19 +28,18 @@ void initializePlatform() {}
 #endif
 
 int main(int argc, char **args) {
+  if (argc < 5) {
+    std::cout << "No invaders ROM files specified. Aborting..." << std::endl;
+    return 1;
+  }
+
   invaders::Bus bus;
   bus.Reset();
 
-  // CPU Diagnostics moment
-  if (!bus.LoadFileAt("tmp/cpudiag.bin", 0x0100)) {
+  if (!(bus.LoadFileAt(args[1], 0x0000) && bus.LoadFileAt(args[2], 0x0800) &&
+        bus.LoadFileAt(args[3], 0x1000) && bus.LoadFileAt(args[4], 0x0800))) {
+    std::cerr << "Unable to start the emulator";
     return -1;
-  }
-
-  bus.cpu.pc = 0x0100;
-
-  while (true) {
-    bus.TickCPU();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
@@ -126,10 +121,13 @@ int main(int argc, char **args) {
   ImGui_ImplOpenGL3_Init(glsl_version);
 
   bool done = false;
+  bool paused = false;
+
+  auto lastPartialFrame = SDL_GetTicks();
+  bool vblank = false;
 
   while (!done) {
     SDL_Event event;
-
     while (SDL_PollEvent(&event)) {
       ImGui_ImplSDL2_ProcessEvent(&event);
 
@@ -144,14 +142,40 @@ int main(int argc, char **args) {
       }
     }
 
+    if (!paused) {
+      // Timers
+      auto now = SDL_GetTicks();
+
+      // Fire approximately every 8 milliseconds
+      auto delta = now - lastPartialFrame;
+
+      if (delta >= 8) {
+        for (int i = 0; i < 16'500; i++) {
+          bus.TickCPU();
+        }
+        bus.cpu.Interrupt(vblank ? 2 : 1);
+
+        vblank = !vblank;
+        lastPartialFrame = now;
+      }
+    }
+
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
     {
-      ImGui::Begin("Window");
-      ImGui::Text("This is some useful text.");
+      ImGui::Begin("Stats");
+
+      ImGui::Text("Framerate: %f", io.Framerate);
+      ImGui::Text("PC:     %04x", bus.cpu.pc);
+      ImGui::Text("Opcode: %02x", bus.cpu.opcode);
+
+      if (ImGui::Button(paused ? "Resume" : "Pause")) {
+        paused = !paused;
+      }
+
       ImGui::End();
     }
 

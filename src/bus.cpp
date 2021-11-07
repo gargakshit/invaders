@@ -15,7 +15,20 @@ Bus::Bus()
           std::bind(&Bus::WriteIO, this, std::placeholders::_1,
                     std::placeholders::_2)) {}
 
-void Bus::WriteMem(uint16_t addr, uint8_t data) { mem[addr] = data; }
+void Bus::WriteMem(uint16_t addr, uint8_t data) {
+  if (addr < 0x2000) {
+    // printf("Writing ROM not allowed %x\n", address);
+    return;
+  }
+
+  if (addr >= 0x4000) {
+    // printf("Writing out of Space Invaders RAM not allowed %x\n", address);
+    return;
+  }
+
+  mem[addr] = data;
+}
+
 uint8_t Bus::ReadMem(uint16_t addr) { return mem[addr]; }
 
 // IO not implemented (yet)
@@ -40,8 +53,8 @@ void Bus::WriteIO(uint8_t port, uint8_t data) {
 uint8_t Bus::ReadIO(uint8_t port) {
   switch (port) {
   case 0: return 1;
-
   case 1: return port1;
+  case 2: return 0;
 
   // Shift register
   case 3: {

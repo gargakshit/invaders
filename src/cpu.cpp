@@ -1,18 +1,16 @@
-#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <ostream>
 #include <stdint.h>
 
 #include "cpu.hpp"
 #include "utils.hpp"
 
-#define PRINT_CPU_STATUS
-
-#ifdef PRINT_CPU_STATUS
-#include <iomanip>
-#include <iostream>
-#endif
+// #define PRINT_CPU_STATUS
+// #define PRINT_INTERRUPTS
 
 // Basic CP/M emulation for cpudiag tests. Uncomment to enable
-#define CPM_EMU
+// #define CPM_EMU
 
 namespace invaders {
 CPU::CPU(ReadBusFunction readBus, WriteBusFunction writeBus,
@@ -66,10 +64,15 @@ void CPU::LogicFlagsA() {
 
 inline uint16_t CPU::GetHL() { return ((uint16_t)h) << 8 | (uint16_t)l; }
 
-inline void CPU::UnimplementedOpcode() { TODO("Unimplemented Opcode"); }
+inline void CPU::UnimplementedOpcode(uint8_t opcode) {
+  std::cerr << "Tried to run opcode: 0x" << std::hex << std::setw(2)
+            << std::setfill('0') << +opcode << std::endl;
+  TODO("Unimplemented Opcode");
+}
 
 inline uint8_t CPU::GetOperand8_0(uint8_t opcode) {
-  // Match with the second nibble
+
+  // Match with the second nibbe
   switch ((opcode >> 3) & 0x7) {
   case 0: return b;
   case 1: return c;
@@ -215,9 +218,14 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
             << +opcode << std::endl;
 #endif
 
+  this->opcode = opcode;
+
   switch (opcode) {
   // NOP
-  case 0x00: break;
+  // clang-format off
+  case 0x00: case 0x10: case 0x20: case 0x30: case 0x08: case 0x18: case 0x28:
+  case 0x38: break;
+  // clang-format on
 
   // MOV
   // clang-format off
@@ -708,7 +716,7 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
   } break;
 
   default: {
-    UnimplementedOpcode();
+    UnimplementedOpcode(opcode);
   } break;
   }
 }
@@ -722,5 +730,18 @@ void CPU::Tick() {
     pc += 1;
     ExecuteOpcode(opcode);
   }
+}
+
+void CPU::Interrupt(uint8_t vector) {
+#ifdef PRINT_INTERRUPTS
+  std::cerr << "DBG:    IRQ(0x" << std::hex << std::setw(2) << std::setfill('0')
+            << +vector << ")"
+            << "    PC: 0x" << std::setw(2) << +(vector * 8) << std::endl;
+#endif
+
+  StackPush(pc);
+  // No vector guards (yet)
+  pc = vector * 8;
+  interrupts = false;
 }
 } // namespace invaders

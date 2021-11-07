@@ -11,9 +11,6 @@ enum KeyboardState {
 
 #pragma once
 class Bus {
-  // Keep the full addressable range as memory for now
-  uint8_t mem[1 << 16] = {0};
-
   void WriteMem(uint16_t addr, uint8_t data);
   uint8_t ReadMem(uint16_t addr);
 
@@ -38,6 +35,9 @@ public:
 
   // IO
   void SetKeyboardState(KeyboardState state, bool pressed);
+
+  // Keep the full addressable range as memory for now
+  uint8_t mem[1 << 16] = {0};
 
   Bus();
 };
