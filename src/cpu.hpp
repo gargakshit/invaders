@@ -1,6 +1,8 @@
 #include <functional>
 #include <stdint.h>
 
+#include "config.h"
+
 // Returns the register pair (a, b)
 #define GET_RP(a, b) (((uint16_t)a << 8) | (uint16_t)b)
 

@@ -1,6 +1,11 @@
-#include <SDL_render.h>
+#include <exception>
 #include <iostream>
 #include <stdint.h>
+
+// Dear Imgui
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl.h>
 
 // SDL2
 #include <SDL2/SDL.h>
@@ -10,10 +15,7 @@
 #include <SDL2/SDL_opengl.h>
 #endif
 
-// Dear Imgui
-#include <imgui.h>
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl.h>
+#include "config.h"
 
 #include "bus.hpp"
 #include "font.h"
@@ -38,7 +40,7 @@ int main(int argc, char **args) {
   bus.Reset();
 
   if (!(bus.LoadFileAt(args[1], 0x0000) && bus.LoadFileAt(args[2], 0x0800) &&
-        bus.LoadFileAt(args[3], 0x1000) && bus.LoadFileAt(args[4], 0x0800))) {
+        bus.LoadFileAt(args[3], 0x2000) && bus.LoadFileAt(args[4], 0x1800))) {
     std::cerr << "Unable to start the emulator";
     return -1;
   }
@@ -107,8 +109,7 @@ int main(int argc, char **args) {
   // style.FramePadding = ImVec2(2, 1);
   style.WindowRounding = 4;
   style.WindowPadding = ImVec2(16, 12);
-  style.Colors[ImGuiCol_WindowBg] =
-      ImVec4(0.094f, 0.094f, 0.101f, 1); // ~#18181A
+  style.Colors[ImGuiCol_WindowBg] = ImVec4(0.f, 0.f, 0.f, 0);
   style.WindowRounding = 0.0f;
 
   // Fonts
@@ -129,17 +130,24 @@ int main(int argc, char **args) {
 
   const uint16_t vramStart = 0x2400;
 
-  auto displayRenderer = SDL_CreateRenderer(
-      window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-  auto displayTexture =
-      SDL_CreateTexture(displayRenderer, SDL_PIXELFORMAT_RGB888,
-                        SDL_TEXTUREACCESS_TARGET, 256, 224);
-  auto textureId = SDL_GL_BindTexture(displayTexture, nullptr, nullptr);
   auto displayDimens = ImVec2(256, 224);
 
-  auto displayScaledRect = SDL_Rect{};
-  displayScaledRect.w = 1;
-  displayScaledRect.h = 1;
+  GLubyte displayFramebuffer[224 * 256 * 3];
+
+  GLuint displayTexture;
+  glGenTextures(1, &displayTexture);
+  glBindTexture(GL_TEXTURE_2D, displayTexture);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 224, 0, GL_RGB, GL_UNSIGNED_BYTE,
+               displayFramebuffer);
 
   while (!done) {
     SDL_Event event;
@@ -173,41 +181,39 @@ int main(int argc, char **args) {
           bus.TickCPU();
         }
         bus.cpu.Interrupt(2);
-        // bus.cpu.Interrupt(vblank ? 2 : 1);
-
-        // vblank = !vblank;
         lastPartialFrame = now;
       }
-
-      SDL_SetRenderTarget(displayRenderer, displayTexture);
-      SDL_RenderClear(displayRenderer);
 
       for (unsigned int x = 0; x < 224; ++x) {
         for (unsigned int y = 0; y < 32; ++y) {
           auto byte = bus.mem[vramStart + ((x * 32) + y)];
-          // std::cerr << std::hex << vramStart + ((x * 32) + y) << ' ' << +byte
-          //           << std::endl;
-
           for (unsigned int bit = 0; bit < 8; ++bit) {
-            if (byte & (1 << bit)) {
-              SDL_SetRenderDrawColor(displayRenderer, 0x00, 0x00, 0x00, 0xff);
-            } else if (x > 200 && (y * 8) < 220) {
-              SDL_SetRenderDrawColor(displayRenderer, 0xff, 0x00, 0x00, 0xff);
-            } else if (y < 10) {
-              SDL_SetRenderDrawColor(displayRenderer, 0x00, 0xff, 0x00, 0xff);
-            } else {
-              SDL_SetRenderDrawColor(displayRenderer, 0xff, 0xff, 0xff, 0xff);
-            }
+            auto i = ((x * 256) + y + bit) * 3;
 
-            displayScaledRect.x = x;
-            displayScaledRect.y = y * bit;
-            SDL_RenderFillRect(displayRenderer, &displayScaledRect);
+            if ((byte & (1 << bit)) == 0) {
+              displayFramebuffer[i] = 0x00;
+              displayFramebuffer[i + 1] = 0x00;
+              displayFramebuffer[i + 2] = 0x00;
+            } else if (x > 200 && (y * 8) < 220) {
+              displayFramebuffer[i] = 0xff;
+              displayFramebuffer[i + 1] = 0x00;
+              displayFramebuffer[i + 2] = 0x00;
+            } else if (y < 10) {
+              displayFramebuffer[i] = 0x00;
+              displayFramebuffer[i + 1] = 0xff;
+              displayFramebuffer[i + 2] = 0x00;
+            } else {
+              displayFramebuffer[i] = 0xff;
+              displayFramebuffer[i + 1] = 0xff;
+              displayFramebuffer[i + 2] = 0xff;
+            }
           }
         }
       }
 
-      SDL_SetRenderTarget(displayRenderer, NULL);
-      SDL_RenderCopy(displayRenderer, displayTexture, NULL, NULL);
+      glBindTexture(GL_TEXTURE_2D, displayTexture);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 224, 0, GL_RGB,
+                   GL_UNSIGNED_BYTE, displayFramebuffer);
     }
 
     // Start the Dear ImGui frame
@@ -226,7 +232,7 @@ int main(int argc, char **args) {
         paused = !paused;
       }
 
-      ImGui::Image((void *)(intptr_t)textureId, displayDimens);
+      ImGui::Image((void *)(intptr_t)displayTexture, displayDimens);
 
       ImGui::End();
     }
@@ -234,6 +240,7 @@ int main(int argc, char **args) {
     ImGui::Render();
 
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -251,9 +258,6 @@ int main(int argc, char **args) {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
-
-  SDL_DestroyTexture(displayTexture);
-  SDL_DestroyRenderer(displayRenderer);
 
   SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);

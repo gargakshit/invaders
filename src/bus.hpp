@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include "config.h"
 #include "cpu.hpp"
 
 namespace invaders {

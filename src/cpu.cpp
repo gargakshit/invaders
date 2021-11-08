@@ -6,12 +6,6 @@
 #include "cpu.hpp"
 #include "utils.hpp"
 
-// #define PRINT_CPU_STATUS
-// #define PRINT_INTERRUPTS
-
-// Basic CP/M emulation for cpudiag tests. Uncomment to enable
-// #define CPM_EMU
-
 namespace invaders {
 CPU::CPU(ReadBusFunction readBus, WriteBusFunction writeBus,
          ReadIOFunction readIO, WriteIOFunction writeIO)
@@ -65,9 +59,7 @@ void CPU::LogicFlagsA() {
 inline uint16_t CPU::GetHL() { return ((uint16_t)h) << 8 | (uint16_t)l; }
 
 inline void CPU::UnimplementedOpcode(uint8_t opcode) {
-  std::cerr << "Tried to run opcode: 0x" << std::hex << std::setw(2)
-            << std::setfill('0') << +opcode << std::endl;
-  TODO("Unimplemented Opcode");
+  TRACE("Unimplemented Opcode");
 }
 
 inline uint8_t CPU::GetOperand8_0(uint8_t opcode) {
@@ -199,7 +191,7 @@ inline uint16_t CPU::StackPop() {
 }
 
 inline uint16_t CPU::GetRSTAddr(uint8_t opcode) {
-  switch (opcode) {
+  switch ((opcode >> 3) & 0x7) {
   case 0: return 0x0000;
   case 1: return 0x0008;
   case 2: return 0x0010;
@@ -215,7 +207,7 @@ inline uint16_t CPU::GetRSTAddr(uint8_t opcode) {
 void CPU::ExecuteOpcode(uint8_t opcode) {
 #ifdef PRINT_CPU_STATUS
   std::cout << "Executing: 0x" << std::hex << std::setfill('0') << std::setw(2)
-            << +opcode << std::endl;
+            << +opcode << " at PC: 0x" << std::setw(4) << pc - 1 << std::endl;
 #endif
 
   this->opcode = opcode;
@@ -223,8 +215,9 @@ void CPU::ExecuteOpcode(uint8_t opcode) {
   switch (opcode) {
   // NOP
   // clang-format off
-  case 0x00: case 0x10: case 0x20: case 0x30: case 0x08: case 0x18: case 0x28:
-  case 0x38: break;
+  // case 0x00: case 0x10: case 0x20: case 0x30: case 0x08: case 0x18: case 0x28:
+  // case 0x38: break;
+  case 0x00: break;
   // clang-format on
 
   // MOV
@@ -734,7 +727,7 @@ void CPU::Tick() {
 
 void CPU::Interrupt(uint8_t vector) {
 #ifdef PRINT_INTERRUPTS
-  std::cerr << "DBG:    IRQ(0x" << std::hex << std::setw(2) << std::setfill('0')
+  std::cout << "DBG:    IRQ(0x" << std::hex << std::setw(2) << std::setfill('0')
             << +vector << ")"
             << "    PC: 0x" << std::setw(2) << +(vector * 8) << std::endl;
 #endif

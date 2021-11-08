@@ -2,7 +2,6 @@
 #include <functional>
 #include <iostream>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "bus.hpp"
 #include "cpu.hpp"
@@ -22,12 +21,15 @@ void Bus::WriteMem(uint16_t addr, uint8_t data) {
     return;
   }
 
-  if (addr >= 0x4000) {
-    // printf("Writing out of Space Invaders RAM not allowed %x\n", address);
-    return;
-  }
+  // if (addr >= 0x4000) {
+  //   // printf("Writing out of Space Invaders RAM not allowed %x\n", address);
+  //   return;
+  // }
 
-  printf("Writing to %04X\n", addr);
+#ifdef PRINT_MEM_WRITES
+  std::cout << "Mem write @" << std::hex << addr << ':' << +data << std::endl;
+#endif
+
   mem[addr] = data;
 }
 
