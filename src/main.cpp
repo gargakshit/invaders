@@ -30,8 +30,14 @@ void initializePlatform() {
 void initializePlatform() {}
 #endif
 
+#define MERGED_ROM
+
 int main(int argc, char **args) {
+#ifdef MERGED_ROM
+  if (argc < 1) {
+#else
   if (argc < 5) {
+#endif
     std::cout << "No invaders ROM files specified. Aborting..." << std::endl;
     return 1;
   }
@@ -39,8 +45,12 @@ int main(int argc, char **args) {
   invaders::Bus bus;
   bus.Reset();
 
+#ifdef MERGED_ROM
+  if (!bus.LoadFileAt(args[1], 0x0000)) {
+#else
   if (!(bus.LoadFileAt(args[1], 0x0000) && bus.LoadFileAt(args[2], 0x0800) &&
         bus.LoadFileAt(args[3], 0x2000) && bus.LoadFileAt(args[4], 0x1800))) {
+#endif
     std::cerr << "Unable to start the emulator";
     return -1;
   }
@@ -71,12 +81,12 @@ int main(int argc, char **args) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #else
-  // GL 3.0 + GLSL 130
-  const char *glsl_version = "#version 130";
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+// GL 3.0 + GLSL 130
+const char *glsl_version = "#version 130";
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
   // Create a window
@@ -109,7 +119,7 @@ int main(int argc, char **args) {
   // style.FramePadding = ImVec2(2, 1);
   style.WindowRounding = 4;
   style.WindowPadding = ImVec2(16, 12);
-  style.Colors[ImGuiCol_WindowBg] = ImVec4(0.f, 0.f, 0.f, 0);
+  style.Colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.f);
   style.WindowRounding = 0.0f;
 
   // Fonts
@@ -129,8 +139,7 @@ int main(int argc, char **args) {
   bool vblank = false;
 
   const uint16_t vramStart = 0x2400;
-
-  auto displayDimens = ImVec2(256, 224);
+  auto displayScale = 3;
 
   GLubyte displayFramebuffer[224 * 256 * 3];
 
@@ -138,15 +147,15 @@ int main(int argc, char **args) {
   glGenTextures(1, &displayTexture);
   glBindTexture(GL_TEXTURE_2D, displayTexture);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 224, 0, GL_RGB, GL_UNSIGNED_BYTE,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 224, 256, 0, GL_RGB, GL_UNSIGNED_BYTE,
                displayFramebuffer);
 
   while (!done) {
@@ -169,7 +178,8 @@ int main(int argc, char **args) {
       // Timers
       auto now = SDL_GetTicks();
 
-      // Fire approximately every 8 milliseconds
+      // Fire approximately every 16 milliseconds (will try to squeeze 60 FPS,
+      // or otherwise will run slower)
       auto delta = now - lastPartialFrame;
 
       if (delta >= 16) {
@@ -188,21 +198,25 @@ int main(int argc, char **args) {
         for (unsigned int y = 0; y < 32; ++y) {
           auto byte = bus.mem[vramStart + ((x * 32) + y)];
           for (unsigned int bit = 0; bit < 8; ++bit) {
-            auto i = ((x * 256) + y + bit) * 3;
+            auto i = (x + ((255 - ((y * 8) + bit)) * 224)) * 3;
 
             if ((byte & (1 << bit)) == 0) {
+              // Black
               displayFramebuffer[i] = 0x00;
               displayFramebuffer[i + 1] = 0x00;
               displayFramebuffer[i + 2] = 0x00;
-            } else if (x > 200 && (y * 8) < 220) {
+            } else if (y > 25 && y < 28) {
+              // Red
               displayFramebuffer[i] = 0xff;
               displayFramebuffer[i + 1] = 0x00;
               displayFramebuffer[i + 2] = 0x00;
             } else if (y < 10) {
+              // Green
               displayFramebuffer[i] = 0x00;
               displayFramebuffer[i + 1] = 0xff;
               displayFramebuffer[i + 2] = 0x00;
             } else {
+              // White
               displayFramebuffer[i] = 0xff;
               displayFramebuffer[i + 1] = 0xff;
               displayFramebuffer[i + 2] = 0xff;
@@ -212,7 +226,7 @@ int main(int argc, char **args) {
       }
 
       glBindTexture(GL_TEXTURE_2D, displayTexture);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 224, 0, GL_RGB,
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 224, 256, 0, GL_RGB,
                    GL_UNSIGNED_BYTE, displayFramebuffer);
     }
 
@@ -222,19 +236,31 @@ int main(int argc, char **args) {
     ImGui::NewFrame();
 
     {
-      ImGui::Begin("Stats");
-
+      ImGui::Begin("General");
       ImGui::Text("Framerate: %f", io.Framerate);
-      ImGui::Text("PC:     %04x", bus.cpu.pc);
-      ImGui::Text("Opcode: %02x", bus.cpu.opcode);
-
       if (ImGui::Button(paused ? "Resume" : "Pause")) {
         paused = !paused;
       }
+      ImGui::InputInt("Display Scale", &displayScale, 1, 1);
 
-      ImGui::Image((void *)(intptr_t)displayTexture, displayDimens);
+      if (displayScale < 1) {
+        displayScale = 1;
+      } else if (displayScale > 8) {
+        displayScale = 8;
+      }
 
       ImGui::End();
+    }
+
+    {
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+      ImGui::Begin("Display", NULL,
+                   ImGuiWindowFlags_AlwaysAutoResize |
+                       ImGuiWindowFlags_NoDecoration);
+      ImGui::Image((void *)(intptr_t)displayTexture,
+                   ImVec2(224 * displayScale, 256 * displayScale));
+      ImGui::End();
+      ImGui::PopStyleVar();
     }
 
     ImGui::Render();
