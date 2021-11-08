@@ -1,5 +1,6 @@
 # Build stuff
 *build*/
+out/
 
 # Cache
 .cache/
@@ -12,3 +13,8 @@ imgui.ini
 
 # Vcpkg stuff
 vcpkg_installed/
+
+# Visual studio (and code)
+.vs/
+.vscode/
+CMakeSettings.json

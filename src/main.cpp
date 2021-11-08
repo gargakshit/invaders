@@ -1,3 +1,4 @@
+#include <SDL_render.h>
 #include <iostream>
 #include <stdint.h>
 
@@ -17,7 +18,7 @@
 #include "bus.hpp"
 #include "font.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #pragma comment(lib, "shcore")
 #include <ShellScalingAPI.h>
 void initializePlatform() {
@@ -126,6 +127,20 @@ int main(int argc, char **args) {
   auto lastPartialFrame = SDL_GetTicks();
   bool vblank = false;
 
+  const uint16_t vramStart = 0x2400;
+
+  auto displayRenderer = SDL_CreateRenderer(
+      window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+  auto displayTexture =
+      SDL_CreateTexture(displayRenderer, SDL_PIXELFORMAT_RGB888,
+                        SDL_TEXTUREACCESS_TARGET, 256, 224);
+  auto textureId = SDL_GL_BindTexture(displayTexture, nullptr, nullptr);
+  auto displayDimens = ImVec2(256, 224);
+
+  auto displayScaledRect = SDL_Rect{};
+  displayScaledRect.w = 1;
+  displayScaledRect.h = 1;
+
   while (!done) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -149,15 +164,50 @@ int main(int argc, char **args) {
       // Fire approximately every 8 milliseconds
       auto delta = now - lastPartialFrame;
 
-      if (delta >= 8) {
+      if (delta >= 16) {
         for (int i = 0; i < 16'500; i++) {
           bus.TickCPU();
         }
-        bus.cpu.Interrupt(vblank ? 2 : 1);
+        bus.cpu.Interrupt(1);
+        for (int i = 0; i < 16'500; i++) {
+          bus.TickCPU();
+        }
+        bus.cpu.Interrupt(2);
+        // bus.cpu.Interrupt(vblank ? 2 : 1);
 
-        vblank = !vblank;
+        // vblank = !vblank;
         lastPartialFrame = now;
       }
+
+      SDL_SetRenderTarget(displayRenderer, displayTexture);
+      SDL_RenderClear(displayRenderer);
+
+      for (unsigned int x = 0; x < 224; ++x) {
+        for (unsigned int y = 0; y < 32; ++y) {
+          auto byte = bus.mem[vramStart + ((x * 32) + y)];
+          // std::cerr << std::hex << vramStart + ((x * 32) + y) << ' ' << +byte
+          //           << std::endl;
+
+          for (unsigned int bit = 0; bit < 8; ++bit) {
+            if (byte & (1 << bit)) {
+              SDL_SetRenderDrawColor(displayRenderer, 0x00, 0x00, 0x00, 0xff);
+            } else if (x > 200 && (y * 8) < 220) {
+              SDL_SetRenderDrawColor(displayRenderer, 0xff, 0x00, 0x00, 0xff);
+            } else if (y < 10) {
+              SDL_SetRenderDrawColor(displayRenderer, 0x00, 0xff, 0x00, 0xff);
+            } else {
+              SDL_SetRenderDrawColor(displayRenderer, 0xff, 0xff, 0xff, 0xff);
+            }
+
+            displayScaledRect.x = x;
+            displayScaledRect.y = y * bit;
+            SDL_RenderFillRect(displayRenderer, &displayScaledRect);
+          }
+        }
+      }
+
+      SDL_SetRenderTarget(displayRenderer, NULL);
+      SDL_RenderCopy(displayRenderer, displayTexture, NULL, NULL);
     }
 
     // Start the Dear ImGui frame
@@ -175,6 +225,8 @@ int main(int argc, char **args) {
       if (ImGui::Button(paused ? "Resume" : "Pause")) {
         paused = !paused;
       }
+
+      ImGui::Image((void *)(intptr_t)textureId, displayDimens);
 
       ImGui::End();
     }
@@ -199,6 +251,9 @@ int main(int argc, char **args) {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
+
+  SDL_DestroyTexture(displayTexture);
+  SDL_DestroyRenderer(displayRenderer);
 
   SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);
