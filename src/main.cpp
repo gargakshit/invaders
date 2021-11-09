@@ -75,7 +75,7 @@ int main(int argc, char **args) {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+  // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
@@ -127,15 +127,42 @@ int main(int argc, char **args) {
   const invaders::KeyboardState keyStateEnum[keyStateSize] = {
       invaders::P1_LEFT, invaders::P1_RIGHT, invaders::COIN, invaders::P1_FIRE,
       invaders::P1_START};
+
   const int keyCode[keyStateSize] = {GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_C,
                                      GLFW_KEY_SPACE, GLFW_KEY_1};
+
+  const int gamepadButtons[keyStateSize] = {
+      GLFW_GAMEPAD_BUTTON_DPAD_LEFT, GLFW_GAMEPAD_BUTTON_DPAD_RIGHT,
+      GLFW_GAMEPAD_BUTTON_CIRCLE, GLFW_GAMEPAD_BUTTON_CROSS,
+      GLFW_GAMEPAD_BUTTON_START};
+
+  GLFWgamepadstate gamepadState;
+  bool joystickPresent = false;
+  int joystick = 0;
 
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
 
+    // TODO: get a better way
+    // Get the first joystick which is a gamepad
+    for (int i = 0; i < 16; i++) {
+      if (glfwJoystickPresent(i) && glfwJoystickIsGamepad(i)) {
+        joystick = i;
+        joystickPresent = true;
+        break;
+      }
+    }
+
     for (auto i = 0; i < keyStateSize; i++) {
       bus.SetKeyboardState(keyStateEnum[i],
                            glfwGetKey(window, keyCode[i]) == GLFW_PRESS);
+    }
+
+    if (joystickPresent && glfwGetGamepadState(joystick, &gamepadState)) {
+      for (auto i = 0; i < keyStateSize; i++) {
+        bus.SetKeyboardState(keyStateEnum[i],
+                             gamepadState.buttons[gamepadButtons[i]]);
+      }
     }
 
     if (!paused) {
@@ -240,12 +267,12 @@ int main(int argc, char **args) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Update and Render additional Platform Windows
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-      GLFWwindow *backup_current_context = glfwGetCurrentContext();
-      ImGui::UpdatePlatformWindows();
-      ImGui::RenderPlatformWindowsDefault();
-      glfwMakeContextCurrent(backup_current_context);
-    }
+    // if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    //   GLFWwindow *backup_current_context = glfwGetCurrentContext();
+    //   ImGui::UpdatePlatformWindows();
+    //   ImGui::RenderPlatformWindowsDefault();
+    //   glfwMakeContextCurrent(backup_current_context);
+    // }
 
     glfwSwapBuffers(window);
   }
