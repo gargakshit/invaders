@@ -57,8 +57,8 @@ void Bus::WriteIO(uint8_t port, uint8_t data) {
 uint8_t Bus::ReadIO(uint8_t port) {
   switch (port) {
   case 0: return 1;
-  case 1: return 0;
-  // case 1: return port1;
+  // case 1: return 0;
+  case 1: return port1;
   // case 2: return 0;
 
   // Shift register

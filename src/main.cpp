@@ -98,13 +98,11 @@ int main(int argc, char **args) {
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  bool paused = false;
-
   using namespace std::chrono;
 
   auto lastPartialFrame = system_clock::now();
-  bool vblank = false;
 
+  bool paused = false;
   const uint16_t vramStart = 0x2400;
   auto displayScale = 3;
 
@@ -125,8 +123,20 @@ int main(int argc, char **args) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 224, 256, 0, GL_RGB, GL_UNSIGNED_BYTE,
                displayFramebuffer);
 
+  const auto keyStateSize = 5;
+  const invaders::KeyboardState keyStateEnum[keyStateSize] = {
+      invaders::P1_LEFT, invaders::P1_RIGHT, invaders::COIN, invaders::P1_FIRE,
+      invaders::P1_START};
+  const int keyCode[keyStateSize] = {GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_C,
+                                     GLFW_KEY_SPACE, GLFW_KEY_1};
+
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
+
+    for (auto i = 0; i < keyStateSize; i++) {
+      bus.SetKeyboardState(keyStateEnum[i],
+                           glfwGetKey(window, keyCode[i]) == GLFW_PRESS);
+    }
 
     if (!paused) {
       // Timers

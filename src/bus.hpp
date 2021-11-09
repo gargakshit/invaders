@@ -6,8 +6,11 @@
 namespace invaders {
 #pragma once
 enum KeyboardState {
-  LEFT = 0b0010'0000,
-  RIGHT = 0b0100'0000,
+  COIN = 0b0000'0001,
+  P1_LEFT = 0b0010'0000,
+  P1_RIGHT = 0b0100'0000,
+  P1_FIRE = 0b0001'0000,
+  P1_START = 0b0000'0100,
 };
 
 #pragma once
