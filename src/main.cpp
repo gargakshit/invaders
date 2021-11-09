@@ -1,18 +1,16 @@
-#include <exception>
+#include <chrono>
 #include <iostream>
 #include <stdint.h>
 
 // Dear Imgui
 #include <imgui.h>
+#include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl.h>
 
-// SDL2
-#include <SDL2/SDL.h>
+// GLFW
+#include <GLFW/glfw3.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <SDL2/SDL_opengles2.h>
-#else
-#include <SDL2/SDL_opengl.h>
+#include <GLES2/gl2.h>
 #endif
 
 #include "config.h"
@@ -20,24 +18,12 @@
 #include "bus.hpp"
 #include "font.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#pragma comment(lib, "shcore")
-#include <ShellScalingAPI.h>
-void initializePlatform() {
-  SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+static void glfw_error_callback(int error, const char *description) {
+  std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 }
-#else
-void initializePlatform() {}
-#endif
-
-#define MERGED_ROM
 
 int main(int argc, char **args) {
-#ifdef MERGED_ROM
   if (argc < 1) {
-#else
-  if (argc < 5) {
-#endif
     std::cout << "No invaders ROM files specified. Aborting..." << std::endl;
     return 1;
   }
@@ -45,63 +31,43 @@ int main(int argc, char **args) {
   invaders::Bus bus;
   bus.Reset();
 
-#ifdef MERGED_ROM
   if (!bus.LoadFileAt(args[1], 0x0000)) {
-#else
-  if (!(bus.LoadFileAt(args[1], 0x0000) && bus.LoadFileAt(args[2], 0x0800) &&
-        bus.LoadFileAt(args[3], 0x2000) && bus.LoadFileAt(args[4], 0x1800))) {
-#endif
     std::cerr << "Unable to start the emulator";
     return -1;
   }
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
-    std::cerr << "SDL Error: " << SDL_GetError() << std::endl;
-    return -1;
+  // Setup window
+  glfwSetErrorCallback(glfw_error_callback);
+  if (!glfwInit()) {
+    return 1;
   }
-
-  // Initialize platform specific stuff like DPI awareness
-  initializePlatform();
 
   // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
-  // GL ES 2.0 + GLSL 100
   const char *glsl_version = "#version 100";
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
 #elif defined(__APPLE__)
-  // GL 3.2 Core + GLSL 150
   const char *glsl_version = "#version 150";
-  SDL_GL_SetAttribute(
-      SDL_GL_CONTEXT_FLAGS,
-      SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // 3.2+ only
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);           // Required on Mac
 #else
-// GL 3.0 + GLSL 130
-const char *glsl_version = "#version 130";
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+  const char *glsl_version = "#version 130";
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
 
-  // Create a window
-  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-  SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-  auto window_flags =
-      (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-                        SDL_WINDOW_ALLOW_HIGHDPI);
-  auto *window =
-      SDL_CreateWindow("Space Invaders", SDL_WINDOWPOS_CENTERED,
-                       SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-  auto gl_context = SDL_GL_CreateContext(window);
-  SDL_GL_MakeCurrent(window, gl_context);
-  SDL_GL_SetSwapInterval(1); // Enable vsync
+  // Create window with graphics context
+  GLFWwindow *window = glfwCreateWindow(1280, 720, "Invaders", NULL, NULL);
+  if (window == NULL) {
+    return 1;
+  }
+
+  glfwMakeContextCurrent(window);
+  glfwSwapInterval(1); // Enable VSync
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
@@ -129,13 +95,14 @@ SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
   // ImGui::SetCurrentFont(font);
 
   // Setup Platform/Renderer backends
-  ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+  ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  bool done = false;
   bool paused = false;
 
-  auto lastPartialFrame = SDL_GetTicks();
+  using namespace std::chrono;
+
+  auto lastPartialFrame = system_clock::now();
   bool vblank = false;
 
   const uint16_t vramStart = 0x2400;
@@ -149,8 +116,8 @@ SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -158,31 +125,19 @@ SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 224, 256, 0, GL_RGB, GL_UNSIGNED_BYTE,
                displayFramebuffer);
 
-  while (!done) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      ImGui_ImplSDL2_ProcessEvent(&event);
-
-      if (event.type == SDL_QUIT) {
-        done = true;
-      }
-
-      if (event.type == SDL_WINDOWEVENT &&
-          event.window.event == SDL_WINDOWEVENT_CLOSE &&
-          event.window.windowID == SDL_GetWindowID(window)) {
-        done = true;
-      }
-    }
+  while (!glfwWindowShouldClose(window)) {
+    glfwPollEvents();
 
     if (!paused) {
       // Timers
-      auto now = SDL_GetTicks();
+      auto now = system_clock::now();
 
       // Fire approximately every 16 milliseconds (will try to squeeze 60 FPS,
       // or otherwise will run slower)
       auto delta = now - lastPartialFrame;
 
-      if (delta >= 16) {
+      // It gives back the nanoseconds
+      if (delta.count() >= 160'000) {
         for (int i = 0; i < 16'500; i++) {
           bus.TickCPU();
         }
@@ -232,7 +187,7 @@ SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
     {
@@ -265,29 +220,33 @@ SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
     ImGui::Render();
 
-    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    int display_w, display_h;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
+
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    auto *backup_current_window = SDL_GL_GetCurrentWindow();
-    auto backup_current_context = SDL_GL_GetCurrentContext();
-    ImGui::UpdatePlatformWindows();
-    ImGui::RenderPlatformWindowsDefault();
-    SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+    // Update and Render additional Platform Windows
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+      GLFWwindow *backup_current_context = glfwGetCurrentContext();
+      ImGui::UpdatePlatformWindows();
+      ImGui::RenderPlatformWindowsDefault();
+      glfwMakeContextCurrent(backup_current_context);
+    }
 
-    SDL_GL_SwapWindow(window);
+    glfwSwapBuffers(window);
   }
 
   // Cleanup
   ImGui_ImplOpenGL3_Shutdown();
-  ImGui_ImplSDL2_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 
-  SDL_GL_DeleteContext(gl_context);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
+  glfwDestroyWindow(window);
+  glfwTerminate();
 
   return 0;
 }
