@@ -1,4 +1,5 @@
-#include <exception>
+#include <SDL_events.h>
+#include <SDL_keycode.h>
 #include <iostream>
 #include <stdint.h>
 
@@ -98,14 +99,12 @@ int main(int argc, char **args) {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-  // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
 
   auto &style = ImGui::GetStyle();
   style.FrameRounding = 2;
-  // style.FramePadding = ImVec2(2, 1);
   style.WindowRounding = 4;
   style.WindowPadding = ImVec2(16, 12);
   style.Colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.f);
@@ -154,6 +153,18 @@ int main(int argc, char **args) {
 
       if (event.type == SDL_QUIT) {
         done = true;
+      }
+
+      if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN) {
+        auto p = event.type == SDL_KEYDOWN;
+
+        switch (event.key.keysym.sym) {
+        case SDLK_LEFT: bus.SetKeyboardState(invaders::P1_LEFT, p); break;
+        case SDLK_RIGHT: bus.SetKeyboardState(invaders::P1_RIGHT, p); break;
+        case SDLK_c: bus.SetKeyboardState(invaders::COIN, p); break;
+        case SDLK_SPACE: bus.SetKeyboardState(invaders::P1_FIRE, p); break;
+        case SDLK_1: bus.SetKeyboardState(invaders::P1_START, p); break;
+        }
       }
 
       if (event.type == SDL_WINDOWEVENT &&
@@ -259,12 +270,6 @@ int main(int argc, char **args) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // auto *backup_current_window = SDL_GL_GetCurrentWindow();
-    // auto backup_current_context = SDL_GL_GetCurrentContext();
-    // ImGui::UpdatePlatformWindows();
-    // ImGui::RenderPlatformWindowsDefault();
-    // SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
 
     SDL_GL_SwapWindow(window);
   }
