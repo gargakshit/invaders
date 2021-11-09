@@ -30,14 +30,8 @@ void initializePlatform() {
 void initializePlatform() {}
 #endif
 
-#define MERGED_ROM
-
 int main(int argc, char **args) {
-#ifdef MERGED_ROM
   if (argc < 1) {
-#else
-  if (argc < 5) {
-#endif
     std::cout << "No invaders ROM files specified. Aborting..." << std::endl;
     return 1;
   }
@@ -45,12 +39,7 @@ int main(int argc, char **args) {
   invaders::Bus bus;
   bus.Reset();
 
-#ifdef MERGED_ROM
   if (!bus.LoadFileAt(args[1], 0x0000)) {
-#else
-  if (!(bus.LoadFileAt(args[1], 0x0000) && bus.LoadFileAt(args[2], 0x0800) &&
-        bus.LoadFileAt(args[3], 0x2000) && bus.LoadFileAt(args[4], 0x1800))) {
-#endif
     std::cerr << "Unable to start the emulator";
     return -1;
   }
@@ -81,12 +70,12 @@ int main(int argc, char **args) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #else
-// GL 3.0 + GLSL 130
-const char *glsl_version = "#version 130";
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+  // GL 3.0 + GLSL 130
+  const char *glsl_version = "#version 130";
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
   // Create a window
@@ -109,7 +98,7 @@ SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+  // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
@@ -271,11 +260,11 @@ SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    auto *backup_current_window = SDL_GL_GetCurrentWindow();
-    auto backup_current_context = SDL_GL_GetCurrentContext();
-    ImGui::UpdatePlatformWindows();
-    ImGui::RenderPlatformWindowsDefault();
-    SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+    // auto *backup_current_window = SDL_GL_GetCurrentWindow();
+    // auto backup_current_context = SDL_GL_GetCurrentContext();
+    // ImGui::UpdatePlatformWindows();
+    // ImGui::RenderPlatformWindowsDefault();
+    // SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
 
     SDL_GL_SwapWindow(window);
   }
